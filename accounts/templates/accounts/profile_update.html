@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}プロフィール編集{% endblock %}
+
+{% block contents %}
+<div class="container mt-4">
+    <h2 class="mb-4">ユーザー情報編集</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary w-auto me-3">更新</button>
+        <a href="{% url 'accounts:profile_detail' object.pk %}" class="btn btn-secondary">戻る</a>
+    </form>
+</div>
+{% endblock %}

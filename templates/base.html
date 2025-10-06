@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | 連絡帳管理システム</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+    rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/mystyle.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+</head>
+<body>
+    <div class="wrapper d-flex flex-column min-vh-100">
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <div class="navbar-nav d-flex flex-row">
+                <a href="{% url 'notebook:index' %}" class="nav-link mx-3">TOP</a>
+                {% if request.user.is_authenticated %}
+                    <a href="" class="nav-link mx-3 position-relative">
+                        通知
+                        {% if unread_notification_count > 0 %}
+                            <span class="postion-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                
+                            </span>
+                        {% endif %}
+                    </a>
+                {% endif %}
+            </div>
+            <div class="navbar-nav d-flex flex-row">
+                {% if request.user.is_authenticated %}
+                    <span class="navbar-text text-white mx-3">
+                        ようこそ！{{ request.user.username }} さん
+                    </span>
+                    <form method="post" action="{% url 'accounts:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link mx-3 text-white">ログアウト</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="nav-link mx-3">ログイン</a>
+                    <a href="{% url 'accounts:signup' %}" class="nav-link mx-3">サインアップ</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <main class="container-fluid px-4 ">
+            {% block contents %}{% endblock %}
+        </main>
+        <footer class="py-3 bg-black mt-auto">
+            <div class="container px-5">
+                <p class="m-0 text-center text-white small">
+                    Copyright &copy; notebook 2025
+                </p>
+            </div>
+        </footer>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+        {% block script %}{% endblock %}
+    </div>
+</body>
+</html>

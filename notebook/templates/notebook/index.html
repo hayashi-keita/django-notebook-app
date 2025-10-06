@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}トップ{% endblock %}
+
+{% block contents %}
+<div class="text-center mb-5 mt-5">
+    <h1 class="mb-3">連絡帳管理システム TOPページ</h1>
+    <p class="text-muted">各種メニューにアクセスできます。</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        <div class="card h-100 shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title">連絡帳</h5>
+                <p class="card-text">一覧・登録・編集・削除の機能が使用できます。</p>
+                <a href="" class="btn btn-success">連絡帳一覧</a>
+                <a href="" class="btn btn-success">新規登録</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        <div class="card h-100 shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="card-title">ユーザー</h5>
+                <p class="card-text">アカウント登録・編集・削除の機能が使用できます。</p>
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'accounts:profile_list' %}" class="btn btn-success">ユーザー一覧</a>
+                    <a href="{% url 'accounts:profile_detail' request.user.pk %}" class="btn btn-success">プロフィール</a>
+                    <a href="{% url 'accounts:password_change' %}" class="btn btn-success mt-2">パスワード変更</a>
+                {% else %}    
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-success">アカウント登録</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
