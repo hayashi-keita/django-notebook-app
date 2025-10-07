@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}過去の記録詳細{% endblock %}
+
+{% block contents %}
+<div class="contaier my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <h2 class="mb-4">過去の記録詳細（{{ object.date_for|date:'Y年m月d日'}}分）</h2>
+            
+            <div class="card p-4 shadow">
+                {# 既読ステータス表示 #}
+                {% if object.is_read %}
+                    <div class="alert alert-success text-center">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        **担任による確認済です！**（確認者： {{ object.read_by.full_name }}, 日付 {{ object.read_at|date:'Y/m/d' }}）
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-hourglass-split me-2"></i>
+                        担任の確認待ちです。
+                    </div>
+                {% endif %}
+
+                {# 記録内容 #}
+                <h4 class="card-title mb-3">提出内容</h4>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">体調：</div>
+                    <div class="col-sm-8">{{ object.physical_condition }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">メンタル：</div>
+                    <div class="col-sm-8">{{ object.mental_condition }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">振り返り：</div>
+                    <div class="col-sm-8">{{ object.reflection|linebreaksbr }}</div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> 自分の記録一覧に戻る
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

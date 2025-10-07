@@ -7,7 +7,7 @@ class Grade(models.Model):
     name = models.CharField(max_length=50, blank=True, verbose_name='学年名')
 
     def __str__(self):
-        return f'{self.number}年{self.name}'
+        return f'{self.number}年'
 
 class Classroom(models.Model):
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE, related_name='classrooms')
@@ -20,7 +20,6 @@ class Classroom(models.Model):
         related_name='homeroom_classes',
         verbose_name='担任教師'
     )
-
     def __str__(self):
         return f'{self.grade} {self.name}'
 
@@ -41,7 +40,6 @@ class DailyRecord(models.Model):
         related_name='checked_records',
         verbose_name='確認者',
     )
-
     class Meta:
         unique_together = ('student', 'date_for')
     

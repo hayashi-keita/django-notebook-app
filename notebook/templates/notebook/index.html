@@ -1,38 +1,110 @@
 {% extends 'base.html' %}
 
-{% block title %}トップ{% endblock %}
+{% block title %}ダッシュボード{% endblock %}
 
 {% block contents %}
-<div class="text-center mb-5 mt-5">
-    <h1 class="mb-3">連絡帳管理システム TOPページ</h1>
-    <p class="text-muted">各種メニューにアクセスできます。</p>
-</div>
-
-<div class="row justify-content-center">
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-        <div class="card h-100 shadow-sm text-center">
-            <div class="card-body">
-                <h5 class="card-title">連絡帳</h5>
-                <p class="card-text">一覧・登録・編集・削除の機能が使用できます。</p>
-                <a href="" class="btn btn-success">連絡帳一覧</a>
-                <a href="" class="btn btn-success">新規登録</a>
-            </div>
-        </div>
+<div class="container my-5">
+    
+    <div class="text-center mb-5">
+        <h1 class="mb-3">
+            {% if request.user.is_authenticated %}
+                {{ request.user.get_role_display }} ダッシュボード
+            {% else %}
+                連絡帳管理システムへようこそ
+            {% endif %}
+        </h1>
+        <p class="lead text-muted">必要なメニューを選択してください。</p>
     </div>
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-        <div class="card h-100 shadow-sm text-center">
-            <div class="card-body">
-                <h5 class="card-title">ユーザー</h5>
-                <p class="card-text">アカウント登録・編集・削除の機能が使用できます。</p>
-                {% if request.user.is_authenticated %}
-                    <a href="{% url 'accounts:profile_list' %}" class="btn btn-success">ユーザー一覧</a>
-                    <a href="{% url 'accounts:profile_detail' request.user.pk %}" class="btn btn-success">プロフィール</a>
-                    <a href="{% url 'accounts:password_change' %}" class="btn btn-success mt-2">パスワード変更</a>
-                {% else %}    
-                    <a href="{% url 'accounts:signup' %}" class="btn btn-success">アカウント登録</a>
-                {% endif %}
+
+    <div class="row justify-content-center">
+
+        {# -------------------------------------------------- #}
+        {# 担任・管理者向けのダッシュボード #}
+        {# -------------------------------------------------- #}
+        {% if request.user.is_teacher or request.user.is_admin %}
+            
+            {# 1. 提出状況・閲覧カード #}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+                <div class="card h-100 shadow text-center border-primary">
+                    <div class="card-body">
+                        <i class="bi bi-book-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title">クラスの連絡帳管理</h5>
+                        <p class="card-text small text-muted">担当クラスの提出状況確認、既読処理を行います。</p>
+                        {# 担任向け連絡帳一覧 #}
+                        <a href="{% url 'notebook:teacher_record_list' %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-eye"></i> 提出状況を見る
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            {# 2. ユーザー管理カード（管理者向けを想定） #}
+            {% if request.user.is_admin %}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+                <div class="card h-100 shadow text-center border-success">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill text-success mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title">ユーザー・クラス管理</h5>
+                        <p class="card-text small text-muted">アカウント作成、学年・クラスの割り当てを行います。</p>
+                        {# ユーザー一覧（管理者機能） #}
+                        <a href="{% url 'accounts:profile_list' %}" class="btn btn-success mt-2">
+                            <i class="bi bi-list-columns"></i> ユーザー一覧へ
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        {# -------------------------------------------------- #}
+        {# 生徒向けのダッシュボード #}
+        {# -------------------------------------------------- #}
+        {% elif request.user.is_student %}
+
+            {# 1. 連絡帳の提出カード #}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+                <div class="card h-100 shadow text-center border-primary">
+                    <div class="card-body">
+                        <i class="bi bi-pencil-square text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title">今日の連絡帳を提出</h5>
+                        <p class="card-text small text-muted">前登校日の体調と振り返りを入力・提出します。</p>
+                        {# 連絡帳登録 #}
+                        <a href="{% url 'notebook:record_create' %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-file-earmark-plus"></i> 提出する
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {# 2. 過去の記録カード #}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+                <div class="card h-100 shadow text-center border-secondary">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check text-secondary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title">過去の提出記録</h5>
+                        <p class="card-text small text-muted">過去に提出し、既読処理された記録を閲覧します。</p>
+                        {# 生徒向け連絡帳一覧 #}
+                        <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary mt-2">
+                            <i class="bi bi-archive"></i> 記録を閲覧
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        {# -------------------------------------------------- #}
+        {# ログインしていないユーザー #}
+        {# -------------------------------------------------- #}
+        {% else %}
+            <div class="col-12 col-sm-8 col-md-6 mb-4">
+                <div class="card p-5 shadow text-center">
+                    <p class="lead">システムを利用するにはログインが必要です。</p>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg mt-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> ログイン画面へ
+                    </a>
+                </div>
+            </div>
+
+        {% endif %}
+
     </div>
 </div>
 {% endblock %}
