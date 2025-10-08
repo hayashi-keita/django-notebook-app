@@ -39,7 +39,15 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary">
+                    {% if not object.is_read %}
+                        <a href="{% url 'notebook:student_record_update' object.pk %}" class="btn btn-warning me-2">
+                            <i class="bi bi-pencil-square me-1"></i> 編集する
+                        </a>
+                        <a href="{% url 'notebook:student_record_delete' object.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> 削除する
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary ms-2">
                         <i class="bi bi-arrow-left"></i> 自分の記録一覧に戻る
                     </a>
                 </div>

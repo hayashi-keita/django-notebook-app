@@ -1,25 +1,24 @@
-from django.shortcuts import render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView, LoginView
-from django.core.exceptions import PermissionDenied
 from .models import CustomUser
 from .forms import CustomUserChangeForm, CustomUserCreationForm, CustomPasswordChangeForm, CustomAuthenticationForm
+from .mixins import AdminOnlyMixin, TeacherAndAdminOnlyMixin, UserIsOwnerOrStaffMixin, UserIsOwnerOrAdminMixin
 from django.db.models import Q
 
 # アカウント関連
-class SignUpView(CreateView):
+class SignUpView(AdminOnlyMixin, CreateView):
     model = CustomUser
     form_class = CustomUserCreationForm
     template_name = 'accounts/signup.html'
-    success_url = reverse_lazy('accounts:login')
+    success_url = reverse_lazy('accounts:profile_list')
 
 class CustomLoginView(LoginView):
     form_class = CustomAuthenticationForm
     template_name = 'accounts/login.html'
 
-class CustomUserListView(LoginRequiredMixin, ListView):
+class CustomUserListView(TeacherAndAdminOnlyMixin, ListView):
     model = CustomUser
     template_name = 'accounts/profile_list.html'
     paginate_by = 10
@@ -38,31 +37,22 @@ class CustomUserListView(LoginRequiredMixin, ListView):
         context['q'] = self.request.GET.get('q', '')
         return context
 
-class CustomUserDetailView(LoginRequiredMixin, DetailView):
+class CustomUserDetailView(UserIsOwnerOrStaffMixin, DetailView):
     model = CustomUser
     template_name = 'accounts/profile_detail.html'
 
-class CustomUserUpdateView(LoginRequiredMixin, UpdateView):
+class CustomUserUpdateView(LoginRequiredMixin, UserIsOwnerOrAdminMixin, UpdateView):
     model = CustomUser
     form_class = CustomUserChangeForm
     template_name = 'accounts/profile_update.html'
-
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        if obj != self.request.user:
-            raise PermissionDenied
-        return obj
     
     def get_success_url(self):
         return reverse('accounts:profile_detail', kwargs={'pk': self.object.pk})
 
-class CustomUserDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class CustomUserDeleteView(AdminOnlyMixin, DeleteView):
     model = CustomUser
     template_name = 'accounts/profile_delete.html'
     success_url = reverse_lazy('accounts:profile_list')
-    #　管理者のみ許可
-    def test_func(self):
-        return self.request.user.is_superuser
 
 # パスワード変更処理
 class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
@@ -72,3 +62,4 @@ class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
 
 class CustomPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
     template_name = 'accounts/password_change_done.html'
+

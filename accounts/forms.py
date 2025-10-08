@@ -16,7 +16,7 @@ class CustomUserCreationForm(UserCreationForm):
             'classroom': 'クラス',
             'gender': '性別',
         }
-
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
@@ -39,6 +39,30 @@ class CustomUserChangeForm(UserChangeForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        if 'password' in self.fields:
+            del self.fields['password']
+
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+# ユーザーが自分で編集できる項目に制限したフォーム
+class UserSelfUpdateForm(UserChangeForm):
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'full_name', 'email', 'gender')
+        labels = {
+            'username': 'ユーザー名',
+            'full_name': '氏名',
+            'email': 'メールアドレス',
+            'gender': '性別',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'password' in self.fields:
+            del self.fields['password']
+        
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
 

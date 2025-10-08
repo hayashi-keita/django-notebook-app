@@ -15,7 +15,7 @@
                 
                 {# 記録と状態 #}
                 <strong>{{ obj.date_for|date:'Y年m月d日'}} 提出分</strong>
-                <p class="mb-0 small text-muted">体調： {{ obj.physical_condition }} / メンタル； {{ obj.mental_condition }}</p>
+                <p class="mb-0 small text-muted">体調： {{ obj.physical_condition }} / メンタル： {{ obj.mental_condition }}</p>
                 {# 既読ステータス #}
                 {% if obj.is_read %}
                     <span class="badge bg-success rounded-pill">

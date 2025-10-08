@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}記録の削除確認{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <h2 class="mb-4 text-danger text-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> 削除確認
+            </h2>
+            <div class="card p-4 shadow">
+                <p class="lead text-center">
+                    以下の連絡帳の記録を**完全に削除**します。よろしいですか？
+                </p>
+                <div class="alert alert-light text-center">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-end">記録日：</dt>
+                        <dd class="col-sm-8 text-start">
+                            <strong>日付：</strong> {{ object.date_for|date:'Y年m月d日' }}
+                        </dd>
+                        <dt class="col-sm-4 text-end">体調：</dt>
+                        <dd class="col-sm-8 text-start">
+                            <strong>体調：</strong> {{ object.physical_condition|truncatechars:30 }}
+                        </dd>
+                        <dt class="col-sm-4 text-end">メンタル：</dt>
+                        <dd class="col-sm-8 text-start">
+                            <strong>体調：</strong> {{ object.mental_condition|truncatechars:30 }}
+                        </dd>
+                    </dl>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-danger btn-lg">
+                            <i class="bi bi-trash-fill me-2"></i> 削除を実行する
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a href="{% url 'notebook:student_record_detail' object.pk %}" class="btn btn-outline-secondary">
+                        キャンセルして戻る
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,6 +7,7 @@
     
     <div class="text-center mb-5">
         <h1 class="mb-3">
+            {# ログイン状態に応じてタイトルを変更 #}
             {% if request.user.is_authenticated %}
                 {{ request.user.get_role_display }} ダッシュボード
             {% else %}
@@ -16,30 +17,37 @@
         <p class="lead text-muted">必要なメニューを選択してください。</p>
     </div>
 
-    <div class="row justify-content-center">
-
-        {# -------------------------------------------------- #}
-        {# 担任・管理者向けのダッシュボード #}
-        {# -------------------------------------------------- #}
-        {% if request.user.is_teacher or request.user.is_admin %}
+    {# -------------------------------------------------- #}
+    {# 💡 メインの条件分岐: ログイン状態をチェック #}
+    {# -------------------------------------------------- #}
+    {% if request.user.is_authenticated %} 
+        
+        <div class="row justify-content-center">
             
-            {# 1. 提出状況・閲覧カード #}
-            <div class="col-12 col-sm-6 col-md-4 mb-4">
-                <div class="card h-100 shadow text-center border-primary">
-                    <div class="card-body">
-                        <i class="bi bi-book-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
-                        <h5 class="card-title">クラスの連絡帳管理</h5>
-                        <p class="card-text small text-muted">担当クラスの提出状況確認、既読処理を行います。</p>
-                        {# 担任向け連絡帳一覧 #}
-                        <a href="{% url 'notebook:teacher_record_list' %}" class="btn btn-primary mt-2">
-                            <i class="bi bi-eye"></i> 提出状況を見る
-                        </a>
+            {# -------------------------------------------------- #}
+            {# 担任・管理者向けのダッシュボード #}
+            {# -------------------------------------------------- #}
+            {% if request.user.is_teacher %}
+        
+                {# 1. 提出状況・閲覧カード #}
+                <div class="col-12 col-sm-6 col-md-4 mb-4">
+                    <div class="card h-100 shadow text-center border-primary">
+                        <div class="card-body">
+                            <i class="bi bi-book-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
+                            <h5 class="card-title">クラスの連絡帳管理</h5>
+                            <p class="card-text small text-muted">担当クラスの提出状況確認、既読処理を行います。</p>
+                            {# 担任向け連絡帳一覧 (URL名を'teacher_list'に修正) #}
+                            <a href="{% url 'notebook:teacher_record_list' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-eye"></i> 提出状況を見る
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            {# 2. ユーザー管理カード（管理者向けを想定） #}
-            {% if request.user.is_admin %}
+            {# -------------------------------------------------- #}
+            {# 管理者向けのダッシュボード #}
+            {# -------------------------------------------------- #}
+            {% elif request.user.is_admin %}
+            {# 1. ユーザー管理カード（管理者向けを想定） #}
             <div class="col-12 col-sm-6 col-md-4 mb-4">
                 <div class="card h-100 shadow text-center border-success">
                     <div class="card-body">
@@ -50,50 +58,87 @@
                         <a href="{% url 'accounts:profile_list' %}" class="btn btn-success mt-2">
                             <i class="bi bi-list-columns"></i> ユーザー一覧へ
                         </a>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-        {# -------------------------------------------------- #}
-        {# 生徒向けのダッシュボード #}
-        {# -------------------------------------------------- #}
-        {% elif request.user.is_student %}
-
-            {# 1. 連絡帳の提出カード #}
-            <div class="col-12 col-sm-6 col-md-4 mb-4">
-                <div class="card h-100 shadow text-center border-primary">
-                    <div class="card-body">
-                        <i class="bi bi-pencil-square text-primary mb-3" style="font-size: 2.5rem;"></i>
-                        <h5 class="card-title">今日の連絡帳を提出</h5>
-                        <p class="card-text small text-muted">前登校日の体調と振り返りを入力・提出します。</p>
-                        {# 連絡帳登録 #}
-                        <a href="{% url 'notebook:record_create' %}" class="btn btn-primary mt-2">
-                            <i class="bi bi-file-earmark-plus"></i> 提出する
+                        {# ユーザー作成（管理者機能） #}
+                        <a href="{% url 'accounts:signup' %}" class="btn btn-success mt-2">
+                            <i class="bi bi-person-plus-fill"></i> ユーザー作成へ
                         </a>
                     </div>
                 </div>
             </div>
 
-            {# 2. 過去の記録カード #}
+            {# 💡 3. クラス管理カード（新規） #}
+            <div class="col-12 col-sm-6 col-md-4 mb-4">
+                <div class="card h-100 shadow text-center border-info">
+                    <div class="card-body">
+                        <i class="bi bi-door-closed-fill text-info mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title">クラス管理</h5>
+                        <p class="card-text small text-muted">学年・クラス設定を行います。ユーザー登録前に完了させてください。</p>
+                        {# 💡 クラス一覧・登録画面へ #}
+                        <a href="{% url 'notebook:classroom_list' %}" class="btn btn-info mt-2">
+                            <i class="bi bi-list-columns"></i> クラス一覧へ
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {# 💡 4. 学年管理カード（新規） #}
             <div class="col-12 col-sm-6 col-md-4 mb-4">
                 <div class="card h-100 shadow text-center border-secondary">
                     <div class="card-body">
-                        <i class="bi bi-calendar-check text-secondary mb-3" style="font-size: 2.5rem;"></i>
-                        <h5 class="card-title">過去の提出記録</h5>
-                        <p class="card-text small text-muted">過去に提出し、既読処理された記録を閲覧します。</p>
-                        {# 生徒向け連絡帳一覧 #}
-                        <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary mt-2">
-                            <i class="bi bi-archive"></i> 記録を閲覧
+                        <i class="bi bi-building text-secondary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title">学年管理</h5>
+                        <p class="card-text small text-muted">学年設定を行います。システム開始時に必須です。</p>
+                        {# 💡 学年一覧・登録画面へ #}
+                        <a href="{% url 'notebook:grade_list' %}" class="btn btn-secondary mt-2">
+                            <i class="bi bi-list-columns"></i> 学年一覧へ
                         </a>
                     </div>
                 </div>
             </div>
 
-        {# -------------------------------------------------- #}
-        {# ログインしていないユーザー #}
-        {# -------------------------------------------------- #}
-        {% else %}
+            {# -------------------------------------------------- #}
+            {# 生徒向けのダッシュボード #}
+            {# -------------------------------------------------- #}
+            {% elif request.user.is_student %}
+
+                {# 1. 連絡帳の提出カード #}
+                <div class="col-12 col-sm-6 col-md-4 mb-4">
+                    <div class="card h-100 shadow text-center border-primary">
+                        <div class="card-body">
+                            <i class="bi bi-pencil-square text-primary mb-3" style="font-size: 2.5rem;"></i>
+                            <h5 class="card-title">今日の連絡帳を提出</h5>
+                            <p class="card-text small text-muted">前登校日の体調と振り返りを入力・提出します。</p>
+                            {# 連絡帳登録 #}
+                            <a href="{% url 'notebook:record_create' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-file-earmark-plus"></i> 提出する
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {# 2. 過去の記録カード #}
+                <div class="col-12 col-sm-6 col-md-4 mb-4">
+                    <div class="card h-100 shadow text-center border-secondary">
+                        <div class="card-body">
+                            <i class="bi bi-calendar-check text-secondary mb-3" style="font-size: 2.5rem;"></i>
+                            <h5 class="card-title">過去の提出記録</h5>
+                            <p class="card-text small text-muted">過去に提出し、既読処理された記録を閲覧します。</p>
+                            {# 生徒向け連絡帳一覧 (URL名を'student_list'に修正) #}
+                            <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary mt-2">
+                                <i class="bi bi-archive"></i> 記録を閲覧
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            {% endif %}
+        </div>
+        
+    {# -------------------------------------------------- #}
+    {# ログインしていないユーザー (外側の if の else ブロック) #}
+    {# -------------------------------------------------- #}
+    {% else %}
+        <div class="row justify-content-center">
             <div class="col-12 col-sm-8 col-md-6 mb-4">
                 <div class="card p-5 shadow text-center">
                     <p class="lead">システムを利用するにはログインが必要です。</p>
@@ -102,9 +147,7 @@
                     </a>
                 </div>
             </div>
-
-        {% endif %}
-
-    </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

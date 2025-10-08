@@ -1,21 +1,18 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import TemplateView, CreateView, ListView, DetailView
+from django.views.generic import TemplateView, CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.db.models import Q
 from datetime import date, timedelta
 from .models import DailyRecord
 from .forms import DailyRecordForm
+from accounts.mixins import StudentOnlyMixin, TeacherAndAdminOnlyMixin
 
 class Index(TemplateView):
     template_name = 'notebook/index.html'
-
-# ログインかつ生徒であるかをチェックする
-class StudentOnlyMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.role == 'STUDENT'
 
 class DailyRecordCreateView(LoginRequiredMixin, StudentOnlyMixin, CreateView):
     model = DailyRecord
@@ -36,6 +33,17 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentOnlyMixin, CreateView):
         # 初期値記録日を設定
         return {'date_for': self.record_date}
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # get_initial で設定した日付をコンテキストに追加
+        # (self)に 'record_date' という属性が設定されているか判定
+        if hasattr(self, 'record_date'):
+            context['record_date'] = self.record_date
+        # もし record_date が self に設定されていない場合は、再度計算する
+        else:
+            context['record_date'] = date.today() - timedelta(days=1)
+        return context
+    
     def form_valid(self, form):
         # フォーム送信時、生徒と記録日を自動セット
         form.instance.student = self.request.user
@@ -48,8 +56,7 @@ class StudentRecordListView(LoginRequiredMixin, StudentOnlyMixin, ListView):
     template_name = 'notebook/student_record_list.html'
 
     def get_queryset(self):
-        queryset = DailyRecord.objects.filter(student=self.request.user).order_by('date_for')
-        return queryset
+        return DailyRecord.objects.filter(student=self.request.user).order_by('date_for')
 
 class StudentRecordDetailView(LoginRequiredMixin, StudentOnlyMixin, DetailView):
     model = DailyRecord
@@ -61,13 +68,38 @@ class StudentRecordDetailView(LoginRequiredMixin, StudentOnlyMixin, DetailView):
         )
         return queryset
 
+class StudentRecordUpdateView(LoginRequiredMixin, StudentOnlyMixin, UpdateView):
+    model = DailyRecord
+    form_class = DailyRecordForm
+    template_name = 'notebook/record_form.html'
 
-# 担任または管理者であるかをチェック
-class TeacherAngAdminOnlyMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.role == 'TEACHER' or self.request.user.role == 'ADMIN'
+    def get_queryset(self):
+        return DailyRecord.objects.filter(student=self.request.user)
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if obj.is_read:
+            raise PermissionDenied('担任に確認された記録は編集できません。')
+        return obj
 
-class TeacherRecordListView(LoginRequiredMixin, TeacherAngAdminOnlyMixin, ListView):
+    def get_success_url(self):
+        return reverse('notebook:student_record_detail', kwargs={'pk': self.object.pk})
+
+class StudentRecordDeleteView(LoginRequiredMixin, StudentOnlyMixin, DeleteView):
+    model = DailyRecord
+    template_name = 'notebook/student_record_delete.html'
+    success_url = reverse_lazy('notebook:student_record_list')
+
+    def get_queryset(self):
+        return DailyRecord.objects.filter(student=self.request.user)
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if obj.is_read:
+            raise PermissionDenied('担任に確認された記録は削除できません。')
+        return obj
+
+class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView):
     model = DailyRecord
     template_name = 'notebook/teacher_record_list.html'
 
@@ -82,7 +114,7 @@ class TeacherRecordListView(LoginRequiredMixin, TeacherAngAdminOnlyMixin, ListVi
         queryset = queryset.order_by('is_read', '-date_for')
         return queryset
 
-class TeacherRecordDetailView(LoginRequiredMixin, TeacherAngAdminOnlyMixin, DetailView):
+class TeacherRecordDetailView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, DetailView):
     model = DailyRecord
     template_name = 'notebook/teacher_record_detail.html'
     # 担任は自分の生徒の記録しか見れない

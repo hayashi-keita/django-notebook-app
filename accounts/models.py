@@ -34,16 +34,28 @@ class CustomUser(AbstractUser):
     full_name = models.CharField(max_length=50, verbose_name='氏名')
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, default='no_answer', verbose_name='性別')
 
+    
     def __str__(self):
         return f'{self.username} ({self.get_role_display()})'
-
+    
+    @property
     def is_student(self):
         return self.role == 'STUDENT'
     
+    @property
     def is_teacher(self):
         return self.role == 'TEACHER'
     
-    def is_admim(self):
+    @property
+    def is_admin(self):
         return self.role == 'ADMIN'
+    
+    def save(self, *args, **kwargs):
+        # ロールが 'ADMIN' の場合、is_staff (管理サイトアクセス権) を True に設定
+        if self.role == 'ADMIN':
+            self.is_staff = True
+        else:
+            self.is_staff = False
+        super().save(*args, **kwargs)
 
 

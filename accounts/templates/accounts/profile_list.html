@@ -43,7 +43,17 @@
                         <td>{{ obj.username }}</td>
                         
                         {# 役割と学年・クラス・性別はバッジやフォールバックで表示を改善 #}
-                        <td><span class="badge bg-secondary">{{ obj.get_role_display }}</span></td>
+                        <td>
+                            {% if obj.role == 'STUDENT' %}
+                                <span class="badge bg-info">生徒</span>
+                            {% elif obj.role == 'TEACHER' %}
+                                <span class="badge bg-warning text-dark">先生</span>
+                            {% elif obj.role == 'ADMIN' %}
+                                <span class="badge bg-danger">管理者</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ obj.get_role_display }}</span>
+                            {% endif %}
+                        </td>
                         <td>{{ obj.grade|default:"-" }}</td>
                         <td>{{ obj.classroom|default:"-" }}</td>
                         
