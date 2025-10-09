@@ -77,15 +77,15 @@
 
             {# アクションボタン #}
             <div class="d-flex justify-content-end mt-4">
-                {# 編集ボタン: 自分のプロフィールである場合のみ表示 #}
-                {% if object == request.user %}
+                {# 編集ボタン: 自分のプロフィールか管理者である場合のみ表示 #}
+                {% if object == request.user or request.user.is_admin %}
                     <a href="{% url 'accounts:profile_update' object.pk %}" class="btn btn-primary btn-lg me-3">
                         <i class="bi bi-pencil-square me-2"></i>プロフィールを編集
                     </a>
                 {% endif %}
                 
-                {# 削除ボタン: is_superuser の場合のみ表示 #}
-                {% if request.user.is_superuser %}
+                {# 削除ボタン: 管理者 の場合のみ表示 #}
+                {% if request.user.is_admin %}
                     <a href="{% url 'accounts:profile_delete' object.pk %}" class="btn btn-danger btn-lg">
                         <i class="bi bi-trash-fill me-2"></i>ユーザー削除
                     </a>

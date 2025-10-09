@@ -3,7 +3,7 @@ from django.views.generic import CreateView, ListView, DetailView, UpdateView, D
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView, LoginView
 from .models import CustomUser
-from .forms import CustomUserChangeForm, CustomUserCreationForm, CustomPasswordChangeForm, CustomAuthenticationForm
+from .forms import CustomUserChangeForm, CustomUserCreationForm, CustomPasswordChangeForm, CustomAuthenticationForm, UserSelfUpdateForm
 from .mixins import AdminOnlyMixin, TeacherAndAdminOnlyMixin, UserIsOwnerOrStaffMixin, UserIsOwnerOrAdminMixin
 from django.db.models import Q
 
@@ -43,8 +43,14 @@ class CustomUserDetailView(UserIsOwnerOrStaffMixin, DetailView):
 
 class CustomUserUpdateView(LoginRequiredMixin, UserIsOwnerOrAdminMixin, UpdateView):
     model = CustomUser
-    form_class = CustomUserChangeForm
     template_name = 'accounts/profile_update.html'
+
+    def get_form_class(self):
+        # ログインユーザーのロールに応じてフォームを切り替える
+        if self.request.user.is_admin:
+            return CustomUserChangeForm 
+        else:
+            return UserSelfUpdateForm
     
     def get_success_url(self):
         return reverse('accounts:profile_detail', kwargs={'pk': self.object.pk})

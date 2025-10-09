@@ -1,8 +1,8 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
 from accounts.mixins import AdminOnlyMixin
-from .models import Grade, Classroom
-from .forms import GradeForm, ClassroomForm
+from ..models import Grade, Classroom
+from ..forms import GradeForm, ClassroomForm
 
 # 学年管理
 class GradeListView(AdminOnlyMixin, ListView):

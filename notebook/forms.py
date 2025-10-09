@@ -1,5 +1,5 @@
 from django import forms
-from .models import DailyRecord, Grade, Classroom
+from .models import DailyRecord, Grade, Classroom, Memo
 
 class DailyRecordForm(forms.ModelForm):
     class Meta:
@@ -27,3 +27,19 @@ class ClassroomForm(forms.ModelForm):
         model = Classroom
         fields = ['name']
         labels = {'name': 'クラス名'}
+
+class MemoForm(forms.ModelForm):
+    
+    class Meta:
+        model = Memo
+        fields = ['text', 'stamp']
+        widgets = {
+            'text': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': '指導メモを記入してください',
+                'class': 'form-control',
+            }),
+            'stamp': forms.RadioSelect,
+        }
+        labels = {'text': '指導メモ', 'stamp': 'スタンプリアクション'}
+

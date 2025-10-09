@@ -26,7 +26,7 @@
                         <td>{{ obj.pk }}</td>
                         <td>{{ obj.name }}</td>
                         {# related_name='users' を利用してユーザー数を表示 #}
-                        <td><span class="badge bg-info">{{ object.users.count }}</span></td> 
+                        <td><span class="badge bg-info">{{ obj.users.count }}</span></td> 
                         <td class="text-nowrap">
                             <a href="{% url 'notebook:grade_update' obj.pk %}" class="btn btn-sm btn-outline-warning me-2">編集</a>
                             <a href="{% url 'notebook:grade_delete' obj.pk %}" class="btn btn-sm btn-danger">削除</a>

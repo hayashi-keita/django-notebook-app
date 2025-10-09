@@ -26,7 +26,7 @@ class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
         fields = (
-            'username', 'full_name', 'role', 'email', 'grade', 'classroom', 'full_name', 'gender')
+            'username', 'full_name', 'role', 'email', 'grade', 'classroom', 'student_id', 'gender')
         labels = {
             'username': 'ユーザー名',
             'full_name': '氏名',
@@ -34,6 +34,7 @@ class CustomUserChangeForm(UserChangeForm):
             'email': 'メールアドレス',
             'grade': '学年',
             'classroom': 'クラス',
+            'student_id': '生徒番号',
             'gender': '性別',
         }
     
@@ -60,6 +61,7 @@ class UserSelfUpdateForm(UserChangeForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
         if 'password' in self.fields:
             del self.fields['password']
         

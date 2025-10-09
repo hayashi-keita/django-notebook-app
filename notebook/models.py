@@ -1,4 +1,3 @@
-from venv import create
 from django.db import models
 from django.conf import settings
 
@@ -45,3 +44,28 @@ class DailyRecord(models.Model):
     
     def __str__(self):
         return f'{self.student.username} - {self.date_for}'
+    
+class Memo(models.Model):
+    STAMP_CHOICES = (
+        ('NONE', 'スタンプなし'),
+        ('LIKE', 'イイネ！'),
+        ('GOOD', 'がんばったね！'),
+        ('TRY', '次回に期待'),
+        ('CHECK', '確認済'),
+    )
+
+    record = models.ForeignKey(DailyRecord, on_delete=models.CASCADE, related_name='memos')
+    # 担任のみ選択可能
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role': 'TEACHER'})
+    text = models.TextField(blank=True, null=True, verbose_name='メモ内容')
+    stamp = models.CharField(max_length=20, choices=STAMP_CHOICES, default='NONE', verbose_name='スタンプ')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = '指導メモ'
+        verbose_name_plural = '指導メモ'
+        unique_together = ('record', 'teacher')
+    
+    def __str__(self):
+        return f'Memo for {self.record} by {self.teacher}'

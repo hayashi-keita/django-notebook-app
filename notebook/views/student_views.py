@@ -1,18 +1,14 @@
-from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import TemplateView, CreateView, ListView, DetailView, UpdateView, DeleteView
+from django.shortcuts import redirect
+from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
-from django.db.models import Q
 from datetime import date, timedelta
-from .models import DailyRecord
-from .forms import DailyRecordForm
-from accounts.mixins import StudentOnlyMixin, TeacherAndAdminOnlyMixin
+from ..models import DailyRecord
+from ..forms import DailyRecordForm
+from accounts.mixins import StudentOnlyMixin
 
-class Index(TemplateView):
-    template_name = 'notebook/index.html'
 
 class DailyRecordCreateView(LoginRequiredMixin, StudentOnlyMixin, CreateView):
     model = DailyRecord
@@ -56,17 +52,24 @@ class StudentRecordListView(LoginRequiredMixin, StudentOnlyMixin, ListView):
     template_name = 'notebook/student_record_list.html'
 
     def get_queryset(self):
-        return DailyRecord.objects.filter(student=self.request.user).order_by('date_for')
+        return DailyRecord.objects.filter(student=self.request.user).order_by('-date_for')
 
 class StudentRecordDetailView(LoginRequiredMixin, StudentOnlyMixin, DetailView):
     model = DailyRecord
     template_name = 'notebook/student_record_detail.html'
 
     def get_queryset(self):
-        queryset = DailyRecord.objects.filter(student=self.request.user).select_related(
-            'read_by', 'student__classroom',
-        )
+        queryset = DailyRecord.objects.filter(
+            student=self.request.user,
+        ).select_related('read_by', 'student__classroom',
+        ).prefetch_related('memos__teacher')
         return queryset
+    # コンテキストデータに既存のメモ情報（表示用）
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        record = self.get_object()
+        context['current_memo'] = record.memos.first()
+        return context
 
 class StudentRecordUpdateView(LoginRequiredMixin, StudentOnlyMixin, UpdateView):
     model = DailyRecord
@@ -99,43 +102,5 @@ class StudentRecordDeleteView(LoginRequiredMixin, StudentOnlyMixin, DeleteView):
             raise PermissionDenied('担任に確認された記録は削除できません。')
         return obj
 
-class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView):
-    model = DailyRecord
-    template_name = 'notebook/teacher_record_list.html'
 
-    def get_queryset(self):
-        # 担任が受け持つクラスを取得
-        homeroom_classes = self.request.user.homeroom_classes.all()
-        # 担任クラスの生徒の記録のみに絞り込み、生徒・クラス情報をまとめて取得
-        queryset = DailyRecord.objects.filter(
-            student__classroom__in=homeroom_classes,
-        ).select_related('student', 'student__classroom')
-        # 未読を優先して日付の新しい順番に並び替え
-        queryset = queryset.order_by('is_read', '-date_for')
-        return queryset
-
-class TeacherRecordDetailView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, DetailView):
-    model = DailyRecord
-    template_name = 'notebook/teacher_record_detail.html'
-    # 担任は自分の生徒の記録しか見れない
-    def get_queryset(self):
-        homeroom_classes = self.request.user.homeroom_classes.all()
-        # 担当クラスの生徒の記録のみに絞り込む
-        queryset = DailyRecord.objects.filter(
-            student__classroom__in=homeroom_classes
-        ).select_related('student', 'student__classroom', 'read_by')
-        return queryset
-    # 既読処理アクション
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        record = self.object
-        if 'mark_read' in request.POST and not record.is_read:
-            # 既読フラグと確認者、確認日時セット
-            record.is_read = True
-            record.read_at = date.today()
-            record.read_by = request.user
-            record.save()
-            messages.success(request, f'{record.date_for}分の連絡帳を既読処理しました。')
-        # 処理後、同じページに戻るか、一覧画面に戻る
-        return HttpResponseRedirect(reverse('notebook:teacher_record_list'))
     

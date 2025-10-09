@@ -13,9 +13,10 @@
                     <i class="bi bi-person-fill me-2"></i>
                     {{ object.student.full_name }} さんの記録
                 </h4>
-                <p class="text-mutde">所属： {{ object.student.grade }} {{ object.student.classroom.name }}</p>
+                <p class="text-muted">所属： {{ object.student.grade }} {{ object.student.classroom.name }}</p>
                 <hr>
-                {# 記録内容 #}
+                
+                {# 記録内容の表示 #}
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">体調：</div>
                     <div class="col-sm-8">{{ object.physical_condition }}</div>
@@ -52,6 +53,118 @@
                     </form>
                 {% endif %}
 
+                <hr class="mt-4">
+
+                {# 💡 担任からのフィードバック (メモ & スタンプ) セクション #}
+                <h5 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック</h5>
+                
+                {# 既存メモの表示エリア #}
+                {% if current_memo %}
+                    <div class="alert alert-info p-3 mb-3 border-start border-info border-5">
+                        <p class="mb-1 text-muted small">
+                            メモ記入者: **{{ current_memo.teacher.full_name }}** (最終更新: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
+                        </p>
+                        
+                        {# スタンプ表示 #}
+                        <h4 class="d-flex align-items-center mb-2">
+                            {% if current_memo.stamp == 'LIKE' %}
+                                {# 💡 LIKE: 背景を濃い緑(bg-success)にし、アイコンと文字を黄色(text-warning)にする #}
+                                <span class="badge bg-success me-2"> 
+                                    <i class="bi bi-hand-thumbs-up-fill text-warning me-1"></i> 
+                                    <span class="text-warning">イイネ！</span>
+                                </span>
+                            {% elif current_memo.stamp == 'GOOD' %}
+                                {# GOOD: 背景を濃い青(bg-primary)、文字とアイコンは白（デフォルト） #}
+                                <span class="badge bg-primary me-2">
+                                    <i class="bi bi-star-fill me-1"></i> がんばったね
+                                </span>
+                            {% elif current_memo.stamp == 'TRY' %}
+                                {# TRY: 背景を濃い灰色(bg-secondary)、文字とアイコンは水色(text-info) #}
+                                <span class="badge bg-secondary me-2">
+                                    <i class="bi bi-lightbulb-fill text-info me-1"></i> 
+                                    <span class="text-info">次回に期待</span>
+                                </span>
+                            {% elif current_memo.stamp == 'CHECK' %}
+                                {# CHECK: 背景を青(bg-primary)、文字とアイコンは白 #}
+                                <span class="badge bg-primary me-2">
+                                    <i class="bi bi-check-square-fill me-1"></i> 確認済
+                                </span>
+                            {% else %}
+                                {# スタンプなし: 背景を薄い灰色(bg-light)、文字を濃い灰色(text-muted) #}
+                                <span class="badge bg-light text-muted border me-2"> 
+                                    <i class="bi bi-dot me-1"></i> スタンプなし
+                                </span>
+                            {% endif %}
+                        </h4>
+
+                        {# メモテキスト表示 #}
+                        {% if current_memo.text %}
+                            <p class="fw-bold">指導コメント:</p>
+                            <div class="p-2 border rounded bg-light">
+                                {{ current_memo.text|linebreaksbr }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# メモ記入/編集フォーム #}
+                <h6 class="mt-4 mb-3">
+                    {% if current_memo %}
+                        <i class="bi bi-pencil-square me-1"></i> 指導メモを編集
+                    {% else %}
+                        <i class="bi bi-journal-plus me-1"></i> 新しい指導メモを記入
+                    {% endif %}
+                </h6>
+                
+                <form method="post" 
+                    action="{% if current_memo %}
+                                {% url 'notebook:record_memo_update' pk=current_memo.pk %}
+                            {% else %}
+                                {% url 'notebook:record_memo_create' record_pk=object.pk %}
+                            {% endif %}"
+                >
+                    {% csrf_token %}
+                    
+                    {# フォーム全体のエラー表示 #}
+                    {% if memo_form.non_field_errors %}
+                        <div class="alert alert-danger">{{ memo_form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        {# スタンプのラジオボタン #}
+                        <label class="form-label fw-bold">{{ memo_form.stamp.label }}</label>
+                        <div class="d-flex flex-wrap gap-3 p-3 border rounded bg-light">
+                            {% for radio in memo_form.stamp %}
+                                <div class="form-check me-4">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if memo_form.stamp.errors %}
+                            <div class="alert alert-danger p-1 mt-1">{{ memo_form.stamp.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {# テキストエリア #}
+                        <label for="{{ memo_form.text.id_for_label }}" class="form-label fw-bold">{{ memo_form.text.label }}</label>
+                        {{ memo_form.text }}
+                        {% if memo_form.text.errors %}
+                            <div class="alert alert-danger p-1 mt-1">{{ memo_form.text.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save me-2"></i> メモを保存・更新
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="mt-4">
                 <div class="text-center mt-4">
                     <a href="{% url 'notebook:teacher_record_list' %}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> 提出状況一覧に戻る

@@ -62,7 +62,8 @@
                         
                         <td class="text-nowrap">
                             <a href="{% url 'accounts:profile_detail' obj.pk %}" class="btn btn-sm btn-outline-primary me-2">詳細</a>
-                            {% if request.user.is_superuser %}
+                            {% if request.user.is_admin %}
+                                <a href="{% url 'accounts:profile_update' obj.pk %}" class="btn btn-warning btn-sm me-2">編集</a>
                                 <a href="{% url 'accounts:profile_delete' obj.pk %}" class="btn btn-danger btn-sm">削除</a>
                             {% endif %}
                         </td>

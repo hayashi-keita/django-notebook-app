@@ -1,25 +1,25 @@
 from os import name
 from django.urls import path
+from .views import main_views, student_views, teacher_views, admin_views
 
-from notebook import admin_views
-from . import views
-from . import admin_views
 
 app_name = 'notebook'
 
 urlpatterns = [
     # トップページ
-    path('', views.Index.as_view(), name='index'),
+    path('', main_views.Index.as_view(), name='index'),
     # 連絡帳作成
-    path('record/create/', views.DailyRecordCreateView.as_view(), name='record_create'),
+    path('record/create/', student_views.DailyRecordCreateView.as_view(), name='record_create'),
     # 生徒関連
-    path('student/records/', views.StudentRecordListView.as_view(), name='student_record_list'),
-    path('student/record/<int:pk>/detail/', views.StudentRecordDetailView.as_view(), name='student_record_detail'),
-    path('student/record/<int:pk>/update/', views.StudentRecordUpdateView.as_view(), name='student_record_update'),
-    path('student/record/<int:pk>/delete/', views.StudentRecordDeleteView.as_view(), name='student_record_delete'),
+    path('student/records/', student_views.StudentRecordListView.as_view(), name='student_record_list'),
+    path('student/record/<int:pk>/detail/', student_views.StudentRecordDetailView.as_view(), name='student_record_detail'),
+    path('student/record/<int:pk>/update/', student_views.StudentRecordUpdateView.as_view(), name='student_record_update'),
+    path('student/record/<int:pk>/delete/', student_views.StudentRecordDeleteView.as_view(), name='student_record_delete'),
     # 担任関連
-    path('teacher/records/', views.TeacherRecordListView.as_view(), name='teacher_record_list'),
-    path('teacher/record/<int:pk>/detail/', views.TeacherRecordDetailView.as_view(), name='teacher_record_detail'),
+    path('teacher/records/', teacher_views.TeacherRecordListView.as_view(), name='teacher_record_list'),
+    path('teacher/record/<int:pk>/detail/', teacher_views.TeacherRecordDetailView.as_view(), name='teacher_record_detail'),
+    path('teacher/record/<int:record_pk>/memo/create/', teacher_views.MemoCreateView.as_view(), name='record_memo_create'),
+    path('teacher/record/<int:pk>/memo/update/', teacher_views.MemoUpdateView.as_view(), name='record_memo_update'),
     # 管理者向け学年管理
     path('management/grades/', admin_views.GradeListView.as_view(), name='grade_list'),
     path('management/grade/create/', admin_views.GradeCreateView.as_view(), name='grade_create'),

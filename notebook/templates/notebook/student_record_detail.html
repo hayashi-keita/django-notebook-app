@@ -38,6 +38,65 @@
                     <div class="col-sm-8">{{ object.reflection|linebreaksbr }}</div>
                 </div>
 
+                <hr class="mt-4">
+
+                {# 担任からのフィードバック (メモ & スタンプ) セクション #}
+                <h4 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック</h4>
+
+                {% if current_memo %}
+                    <div class="alert alert-info p-3 mb-4 border-start border-info border-5">
+                        <p class="mb-2 text-muted small">
+                            確認者: **{{ current_memo.teacher.full_name }}** (日付: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
+                        </p>
+                        
+                        {# スタンプ表示 #}
+                        <h4 class="d-flex align-items-center mb-2">
+                            {% if current_memo.stamp == 'LIKE' %}
+                                {# 💡 LIKE: 背景を濃い緑(bg-success)にし、アイコンと文字を黄色(text-warning)にする #}
+                                <span class="badge bg-success me-2"> 
+                                    <i class="bi bi-hand-thumbs-up-fill text-warning me-1"></i> 
+                                    <span class="text-warning">イイネ！</span>
+                                </span>
+                            {% elif current_memo.stamp == 'GOOD' %}
+                                {# GOOD: 背景を濃い青(bg-primary)、文字とアイコンは白（デフォルト） #}
+                                <span class="badge bg-primary me-2">
+                                    <i class="bi bi-star-fill me-1"></i> がんばったね
+                                </span>
+                            {% elif current_memo.stamp == 'TRY' %}
+                                {# TRY: 背景を濃い灰色(bg-secondary)、文字とアイコンは水色(text-info) #}
+                                <span class="badge bg-secondary me-2">
+                                    <i class="bi bi-lightbulb-fill text-info me-1"></i> 
+                                    <span class="text-info">次回に期待</span>
+                                </span>
+                            {% elif current_memo.stamp == 'CHECK' %}
+                                {# CHECK: 背景を青(bg-primary)、文字とアイコンは白 #}
+                                <span class="badge bg-primary me-2">
+                                    <i class="bi bi-check-square-fill me-1"></i> 確認済
+                                </span>
+                            {% else %}
+                                {# スタンプなし: 背景を薄い灰色(bg-light)、文字を濃い灰色(text-muted) #}
+                                <span class="badge bg-light text-muted border me-2"> 
+                                    <i class="bi bi-dot me-1"></i> スタンプなし
+                                </span>
+                            {% endif %}
+                        </h4>
+                        {# メモテキスト表示 #}
+                        {% if current_memo.text %}
+                            <p class="fw-bold">指導コメント:</p>
+                            <div class="p-2 border rounded bg-light">
+                                {{ current_memo.text|linebreaksbr }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-light text-muted text-center border">
+                        <i class="bi bi-x-circle me-1"></i> 担任からの指導メモはまだありません。
+                    </div>
+                {% endif %}
+                {# 💡 【ここまで追加】 #}
+
+                <hr class="mt-4">
+
                 <div class="text-center mt-4">
                     {% if not object.is_read %}
                         <a href="{% url 'notebook:student_record_update' object.pk %}" class="btn btn-warning me-2">

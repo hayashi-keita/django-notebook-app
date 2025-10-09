@@ -15,6 +15,8 @@ class CustomUser(AbstractUser):
     )
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    student_id = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name='生徒番号')
+
     grade = models.ForeignKey(
         'notebook.Grade',
         on_delete=models.SET_NULL,
