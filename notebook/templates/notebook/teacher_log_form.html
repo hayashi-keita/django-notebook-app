@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}教師メモ作成{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <h2 class="mb-4">
+        <i class="bi bi-journal-text me-2"></i> 教師間共有メモの作成
+    </h2>
+
+    <div class="alert alert-info border-start border-info border-5">
+        このメモは生徒には公開されず、＊＊同じ学年の先生方**と情報共有されます。
+    </div>
+
+    <div class="card p-4 shadow-sm">
+        <h4 class="mb-3">対称生徒：
+            <span class="badge bg-primary me-2">{{ target_student.full_name }}</span>
+            <span class="text-muted small">({{ target_student.classroom.grade }} {{ target_student.classroom.name }})</span>
+        </h4>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.text.id_for_label }}" class="form-label fw-bold">{{ form.text.label }}</label>
+                {{ form.text }}
+                {% if form.text.errors %} <div class="text-danger small">{{ form.text.errors }}</div>{% endif %}
+            </div>
+            <div class="form-check mb-4">
+                {{ form.is_important }}
+                <label for="{{ form.is_important.id_for_label }}" class="form-check-label">{{ form.is_important.label }}</label>
+                {% if form.is_important.errors %} <div class="text-danger small">{{ form.is_important.errors }}</div>{% endif %}
+            </div>
+
+            <button class="btn btn-success btn-lg">
+                <i class="bi bi-save me-2"></i> メモを保存し共有
+            </button>
+            <a href="{% url 'notebook:teacher_log_list' %}" class="btn btn-secondary ms-2">キャンセル</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

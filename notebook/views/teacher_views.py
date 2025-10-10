@@ -2,12 +2,14 @@ from django.views.generic import ListView, DetailView, UpdateView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.shortcuts import redirect, get_object_or_404
+from django.db.models import Q
 from datetime import date
-from ..models import DailyRecord, Memo
-from ..forms import MemoForm
+from ..models import DailyRecord, Memo, TeacherLog
+from accounts.models import CustomUser
+from ..forms import MemoForm, TeacherLogForm
 from accounts.mixins import TeacherAndAdminOnlyMixin
 
 class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView):
@@ -133,3 +135,93 @@ class MemoUpdateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, UpdateView):
     
     def get_success_url(self):
         return reverse('notebook:teacher_record_detail', kwargs={'pk': self.object.record.pk})
+
+class TeacherLogCreateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, CreateView):
+    model = TeacherLog
+    form_class = TeacherLogForm
+    template_name = 'notebook/teacher_log_form.html'
+    success_url = reverse_lazy('notebook:teacher_log_list')
+
+    # ログ作成前に先生の学年設定を確認する
+    def dispatch(self, request, *args, **kwargs):
+        user = self.request.user
+        if not user.grade:
+            messages.error(request, 'メモを作成するには、あなたのユーザー情報に「学年」を設定してください。')
+            return redirect('notebook:teacher_log_list')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        student_pk = self.kwargs.get('student_pk')
+        student_instance = get_object_or_404(CustomUser, pk=student_pk, role='STUDENT')
+        form.instance.teacher = self.request.user
+        form.instance.student = student_instance
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        student_pk = self.kwargs.get('student_pk')
+        target_student = get_object_or_404(CustomUser, pk=student_pk, role='STUDENT')
+        context['target_student'] = target_student
+        return context
+
+class TeacherLogListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView):
+    model = TeacherLog
+    template_name ='notebook/teacher_log_list.html'
+    paginate_by = 10
+
+    def get_queryset(self):
+        # ログインしている先生の学年を取得
+        current_grade = self.request.user.grade
+        # 学年が設定されていない先生(管理者など)の場合は空のクエリセットを返す
+        if not current_grade:
+            return TeacherLog.objects.none()
+        #「同じ学年の生徒」全員のログを取得
+        queryset = TeacherLog.objects.filter(
+            student__grade=current_grade,
+        ).select_related(
+            'student', 'teacher', 'student__classroom')
+        # 1. 重要フラグによる絞り込み (is_important)
+        important_param = self.request.GET.get('important')
+        if important_param == 'true':
+            queryset = queryset.filter(is_important=True)
+        # 2. 作成者による絞り込み (teacher_pk)
+        teacher_pk_param = self.request.GET.get('teacher_pk')
+        if teacher_pk_param:
+            try:
+                # PKが有効な数値か確認
+                teacher_pk = int(teacher_pk_param)
+                queryset = queryset.filter(teacher__pk=teacher_pk)
+            except ValueError:
+                pass
+        
+        queryset = queryset.order_by('-is_important', '-created_at')
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # テンプレートで選択状態を維持するためにGETパラメータを渡す
+        context['selected_important'] = self.request.GET.get('important', 'all')
+        context['selected_teacher_pk'] = self.request.GET.get('teacher_pk')
+        # 作成者フィルター用のオプションリスト (同じ学年の先生)
+        current_grade = self.request.user.grade
+        teachers_in_grade = CustomUser.objects.none()
+        if current_grade:
+            # 学年内の先生リストを取得
+            teachers_in_grade = CustomUser.objects.filter(
+                grade=current_grade,
+                role__in=['TEACHER', 'ADMIN'],
+            ).order_by('full_name')
+        context['teachers_in_grade'] = teachers_in_grade
+        # 選択された先生オブジェクトを特定し、テンプレートに渡す
+        selected_teacher_obj = None
+        teacher_pk = self.request.GET.get('teacher_pk')
+        if teacher_pk and teacher_pk.isdigit():
+            try:
+                # teachers_in_gradeから該当する先生を検索
+                selected_teacher_obj = teachers_in_grade.get(pk=int(teacher_pk))
+                # 存在しない場合はNoneのまま
+            except CustomUser.DoesNotExist:
+                pass
+        context['selected_teacher_obj'] = selected_teacher_obj
+
+        return context

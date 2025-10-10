@@ -6,37 +6,70 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
-            <div class="mb-4">連絡帳 詳細（{{ object.date_for|date:'Y年m月d日'}}分）</div>
+            <div class="mb-4 fs-4 fw-bold text-primary">
+                <i class="bi bi-calendar-check me-2"></i> 連絡帳 詳細（{{ object.date_for|date:'Y年m月d日'}}分）
+            </div>
 
             <div class="card p-4 shadow">
                 <h4 class="card-title mb-3">
                     <i class="bi bi-person-fill me-2"></i>
                     {{ object.student.full_name }} さんの記録
                 </h4>
-                <p class="text-muted">所属： {{ object.student.grade }} {{ object.student.classroom.name }}</p>
+                <p class="text-muted">所属： {{ object.student.classroom.grade }} {{ object.student.classroom.name }}</p>
                 <hr>
                 
+                {# 💡 教師間共有メモへのリンク #}
+                <div class="alert alert-warning p-3 mb-4">
+                    <h5 class="mb-3 text-dark"><i class="bi bi-journal-text me-2"></i> **先生専用アクション (教師間共有)**</h5>
+                    
+                    <a href="{% url 'notebook:teacher_log_create' student_pk=object.student.pk %}" 
+                        class="btn btn-danger w-100 mb-2">
+                        <i class="bi bi-pencil-square me-2"></i> **この生徒の**共有メモを新規作成
+                    </a>
+                    
+                    <a href="{% url 'notebook:teacher_log_list' %}" 
+                        class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-list-columns-reverse me-2"></i> 学年全体の共有メモ一覧へ
+                    </a>
+                </div>
+                
                 {# 記録内容の表示 #}
-                <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">体調：</div>
-                    <div class="col-sm-8">{{ object.physical_condition }}</div>
+                <h5 class="mt-4 mb-3 text-secondary"><i class="bi bi-file-text me-2"></i> 生徒の提出内容</h5>
+                
+                {# 📝 修正箇所：体調のレベルとメモを表示 #}
+                <div class="row mb-3 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted fw-bold">体調（10段階評価）：</div>
+                    <div class="col-sm-8 fw-bold">{{ object.physical_level }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">メンタル：</div>
-                    <div class="col-sm-8">{{ object.mental_condition }}</div>
+                    <div class="col-sm-4 text-muted fw-bold">体調補足メモ：</div>
+                    <div class="col-sm-8">{{ object.physical_condition|default:'(なし)' }}</div>
+                </div>
+
+                {# 📝 修正箇所：メンタルのレベルとメモを表示 #}
+                <div class="row mb-3 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted fw-bold">メンタル（10段階評価）：</div>
+                    <div class="col-sm-8 fw-bold">{{ object.mental_level }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-sm-4 text-muted">振り返り：</div>
-                    <div class="col-sm-8">{{ object.reflection|linebreaksbr }}</div>
+                    <div class="col-sm-4 text-muted fw-bold">メンタル補足メモ：</div>
+                    <div class="col-sm-8">{{ object.mental_condition|default:'(なし)' }}</div>
+                </div>
+
+                <div class="row mb-3 mt-4">
+                    <div class="col-sm-4 text-muted fw-bold">振り返り：</div>
+                    <div class="col-sm-8 border p-2 bg-light">{{ object.reflection|linebreaksbr }}</div>
                 </div>
 
                 <hr class="mt-4">
 
                 {# 既読ステータスとアクション #}
+                <h5 class="mb-3"><i class="bi bi-bookmark-check me-2"></i> 確認状況</h5>
                 {% if object.is_read %}
                     <div class="alert alert-success text-center">
                         <i class="bi bi-check-circle-fill me-2"></i>
                         **この記録は既読です。**（確認者：{{ object.read_by.full_name }}, 日付：{{ object.read_at|date:'Y/m/d' }}）
+                        {# 💡 修正点1: 'Y/m/d H:i' を 'Y/m/d' に変更 #}
                     </div>
                 {% else %}
                     <div class="alert alert-danger text-center">
@@ -56,7 +89,7 @@
                 <hr class="mt-4">
 
                 {# 💡 担任からのフィードバック (メモ & スタンプ) セクション #}
-                <h5 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック</h5>
+                <h5 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック（生徒向け）</h5>
                 
                 {# 既存メモの表示エリア #}
                 {% if current_memo %}
@@ -65,32 +98,27 @@
                             メモ記入者: **{{ current_memo.teacher.full_name }}** (最終更新: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
                         </p>
                         
-                        {# スタンプ表示 #}
+                        {# スタンプ表示... (以降省略) #}
                         <h4 class="d-flex align-items-center mb-2">
                             {% if current_memo.stamp == 'LIKE' %}
-                                {# 💡 LIKE: 背景を濃い緑(bg-success)にし、アイコンと文字を黄色(text-warning)にする #}
                                 <span class="badge bg-success me-2"> 
                                     <i class="bi bi-hand-thumbs-up-fill text-warning me-1"></i> 
                                     <span class="text-warning">イイネ！</span>
                                 </span>
                             {% elif current_memo.stamp == 'GOOD' %}
-                                {# GOOD: 背景を濃い青(bg-primary)、文字とアイコンは白（デフォルト） #}
                                 <span class="badge bg-primary me-2">
                                     <i class="bi bi-star-fill me-1"></i> がんばったね
                                 </span>
                             {% elif current_memo.stamp == 'TRY' %}
-                                {# TRY: 背景を濃い灰色(bg-secondary)、文字とアイコンは水色(text-info) #}
                                 <span class="badge bg-secondary me-2">
                                     <i class="bi bi-lightbulb-fill text-info me-1"></i> 
                                     <span class="text-info">次回に期待</span>
                                 </span>
                             {% elif current_memo.stamp == 'CHECK' %}
-                                {# CHECK: 背景を青(bg-primary)、文字とアイコンは白 #}
                                 <span class="badge bg-primary me-2">
                                     <i class="bi bi-check-square-fill me-1"></i> 確認済
                                 </span>
                             {% else %}
-                                {# スタンプなし: 背景を薄い灰色(bg-light)、文字を濃い灰色(text-muted) #}
                                 <span class="badge bg-light text-muted border me-2"> 
                                     <i class="bi bi-dot me-1"></i> スタンプなし
                                 </span>
@@ -107,7 +135,8 @@
                     </div>
                 {% endif %}
 
-                {# メモ記入/編集フォーム #}
+                {# メモ記入/編集フォーム... (以降省略) #}
+                
                 <h6 class="mt-4 mb-3">
                     {% if current_memo %}
                         <i class="bi bi-pencil-square me-1"></i> 指導メモを編集

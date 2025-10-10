@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}連絡帳 提出状況{% endblock %}
 
@@ -91,29 +90,29 @@
 
     {% if object_list %}
         <div class="list-group">
-            {% for record in object_list %}
-                <a href="{% url 'notebook:teacher_record_detail' record.pk %}"
+            {% for obj in object_list %}
+                <a href="{% url 'notebook:teacher_record_detail' obj.pk %}"
                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center 
-                          {% if not record.is_read %}list-group-item-warning{% endif %}">
+                          {% if not obj.is_read %}list-group-item-warning{% endif %}">
                     <div>
                         {# 💡 生徒ID、氏名、クラス情報 #}
                         <strong>
-                            {% if record.student.student_id %}[{{ record.student.student_id }}] {% endif %}
-                            {{ record.student.full_name }}
+                            {% if obj.student.student_id %}[{{ obj.student.student_id }}] {% endif %}
+                            {{ obj.student.full_name }}
                         </strong>
                         
                         <span class="badge bg-secondary me-3">
-                            {{ record.student.classroom.grade }} {{ record.student.classroom.name }}
+                            {{ obj.student.classroom.grade }} {{ obj.student.classroom.name }}
                         </span>
                         
                         {# 記録日 (日付が選択されている場合に表示) #}
                         {% if request.GET.date %}
-                            <span class="text-muted small">提出日： {{ record.date_for|date:'Y/m/d'}}</span>
+                            <span class="text-muted small">提出日： {{ obj.date_for|date:'Y/m/d'}}</span>
                         {% endif %}
                     </div>
                     
                     {# 既読ステータス #}
-                    {% if record.is_read %}
+                    {% if obj.is_read %}
                         <span class="badge bg-success rounded-pill">
                             <i class="bi bi-check-circle-fill me-1"></i> 既読
                         </span>

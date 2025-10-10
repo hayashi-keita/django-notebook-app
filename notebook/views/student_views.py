@@ -68,7 +68,7 @@ class StudentRecordDetailView(LoginRequiredMixin, StudentOnlyMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         record = self.get_object()
-        context['current_memo'] = record.memos.first()
+        context['current_memo'] = getattr(record, 'memos', None)
         return context
 
 class StudentRecordUpdateView(LoginRequiredMixin, StudentOnlyMixin, UpdateView):
