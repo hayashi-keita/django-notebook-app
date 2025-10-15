@@ -1,180 +1,172 @@
 {% extends 'base.html' %}
 
-{% block title %}連絡帳 提出状況{% endblock %}
+{% block title %}提出状況リスト{% endblock %}
 
 {% block contents %}
-<div class="container my-5">
-    <h2 class="mb-3">
-        <i class="bi bi-person-workspace me-2"></i>担当クラスの連絡帳 提出状況
-    </h2>
-    
-    {# 💡 絞り込み/フィルターコンテナ #}
-    <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" class="row g-3 align-items-end">
-            
-            {# 1. ステータス（未読/既読）フィルター - 選択状態を維持 #}
-            <div class="col-md-5">
-                <label class="form-label d-block mb-1 fw-bold">提出状況フィルター:</label>
-                <div class="btn-group w-100" role="group">
-                    {# 全て #}
-                    <input type="radio" class="btn-check" name="status" id="status-all" value="all" 
-                           {% if selected_status == 'all' %}checked{% endif %}>
-                    <label class="btn btn-outline-secondary" for="status-all">全て</label>
-
-                    {# 未確認のみ #}
-                    <input type="radio" class="btn-check" name="status" id="status-unread" value="unread" 
-                           {% if selected_status == 'unread' %}checked{% endif %}>
-                    <label class="btn btn-outline-danger" for="status-unread">未確認のみ</label>
-
-                    {# 既読のみ #}
-                    <input type="radio" class="btn-check" name="status" id="status-read" value="read" 
-                           {% if selected_status == 'read' %}checked{% endif %}>
-                    <label class="btn btn-outline-success" for="status-read">既読のみ</label>
-                </div>
-            </div>
-
-            {# 2. 日付フィルター #}
-            <div class="col-md-4">
-                <label for="date-filter" class="form-label mb-1 fw-bold">閲覧日付の選択:</label>
-                <input type="date" class="form-control" id="date-filter" name="date" 
-                       value="{{ request.GET.date|default:'' }}" 
-                       max="{% now 'Y-m-d' %}">
-            </div>
-
-            {# 3. 検索ボタン #}
-            <div class="col-md-3 d-grid">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-funnel me-1"></i> 絞り込みを適用
-                </button>
-            </div>
-        </form>
-    </div>
-
-    {# 💡 適用中のフィルター表示 #}
-    <div class="mb-4">
-        <h5 class="d-inline-block me-3 text-secondary fw-bold">
-            <i class="bi bi-search me-2"></i>適用中のフィルター:
-        </h5>
-
-        {# 日付フィルターの表示 #}
-        <span class="badge bg-primary fs-6 me-2 p-2">
-            <i class="bi bi-calendar-check me-1"></i> 
-            {% if request.GET.date %}
-                {{ request.GET.date }}
-            {% else %}
-                本日 ( {% now "Y/m/d" %} )
-            {% endif %}
-        </span>
-
-        {# ステータスフィルターの表示 #}
-        {% if selected_status != 'all' %}
-            {% if selected_status == 'unread' %}
-                <span class="badge bg-danger fs-6 p-2">
-                    <i class="bi bi-exclamation-circle-fill me-1"></i> 未確認のみ
-                </span>
-            {% elif selected_status == 'read' %}
-                <span class="badge bg-success fs-6 p-2">
-                    <i class="bi bi-check-circle-fill me-1"></i> 既読のみ
+<div class="row my-4">
+    <div class="col-12">
+        <h1 class="h3 mb-4 text-gray-800">
+            <i class="bi bi-person-lines-fill me-2"></i>担任クラス連絡帳 提出状況
+            {% if unread_record_count > 0 %}
+                <span class="badge bg-danger rounded-pill ms-3 p-2 shadow">
+                    <i class="bi bi-bell-fill me-1"></i> 未読 <span class="fw-bold">{{ unread_record_count }}</span> 件
                 </span>
             {% endif %}
-        {% else %}
-            <span class="badge bg-secondary fs-6 p-2">
-                <i class="bi bi-list-check me-1"></i> 全ての記録
-            </span>
-        {% endif %}
-    </div>
-    
-    <p class="text-muted small">
-        生徒ID順に表示されています。未確認の記録は背景が黄色になります。
-    </p>
-
-    {% if object_list %}
-        <div class="list-group">
-            {% for obj in object_list %}
-                <a href="{% url 'notebook:teacher_record_detail' obj.pk %}"
-                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center 
-                          {% if not obj.is_read %}list-group-item-warning{% endif %}">
-                    <div>
-                        {# 💡 生徒ID、氏名、クラス情報 #}
-                        <strong>
-                            {% if obj.student.student_id %}[{{ obj.student.student_id }}] {% endif %}
-                            {{ obj.student.full_name }}
-                        </strong>
-                        
-                        <span class="badge bg-secondary me-3">
-                            {{ obj.student.classroom.grade }} {{ obj.student.classroom.name }}
-                        </span>
-                        
-                        {# 記録日 (日付が選択されている場合に表示) #}
-                        {% if request.GET.date %}
-                            <span class="text-muted small">提出日： {{ obj.date_for|date:'Y/m/d'}}</span>
-                        {% endif %}
-                    </div>
+        </h1>
+        
+        <p class="text-muted">
+            対象日: <strong class="text-primary">{{ selected_date|date:"Y年m月d日 (D)" }}</strong> の記録
+        </p>
+        
+        <!-- フィルタリングフォーム -->
+        <div class="card shadow mb-4">
+            <div class="card-body bg-light rounded">
+                <form method="get" class="row g-3 align-items-end">
                     
-                    {# 既読ステータス #}
-                    {% if obj.is_read %}
-                        <span class="badge bg-success rounded-pill">
-                            <i class="bi bi-check-circle-fill me-1"></i> 既読
-                        </span>
-                    {% else %}
-                        <span class="badge bg-danger rounded-pill">
-                            <i class="bi bi-exclamation-circle-fill me-1"></i> 未確認
-                        </span>
-                    {% endif %}
-                </a>
-            {% endfor %}
+                    <div class="col-md-4 col-lg-3">
+                        <label for="date-filter" class="form-label small fw-bold">記録日を選択</label>
+                        <input type="date" id="date-filter" name="date" 
+                               value="{{ date_filter_value }}" 
+                               class="form-control form-control-sm">
+                    </div>
+
+                    <div class="col-md-4 col-lg-3">
+                        <label for="status-filter" class="form-label small fw-bold">提出状況</label>
+                        <select id="status-filter" name="status" 
+                                class="form-select form-select-sm">
+                            <option value="all" {% if selected_status == 'all' %}selected{% endif %}>全員表示</option>
+                            <option value="submitted" {% if selected_status == 'submitted' %}selected{% endif %}>✅ 提出済のみ</option>
+                            <option value="unsubmitted" {% if selected_status == 'unsubmitted' %}selected{% endif %}>❌ 未提出のみ</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 col-lg-3">
+                        <button type="submit" 
+                                class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-filter"></i> フィルタ適用
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
         
-        {# 💡 ページネーション #}
-        {% if is_paginated %}
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {# 前へ #}
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&date={{ request.GET.date|default:"" }}&status={{ selected_status }}" aria-label="Previous">
-                                <span aria-hidden="true">&laquo; 前へ</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">&laquo; 前へ</span></li>
-                    {% endif %}
-
-                    {# ページ番号 #}
-                    {% for i in paginator.page_range %}
-                        {% if page_obj.number == i %}
-                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                        {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}&date={{ request.GET.date|default:"" }}&status={{ selected_status }}">{{ i }}</a>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-
-                    {# 次へ #}
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&date={{ request.GET.date|default:"" }}&status={{ selected_status }}" aria-label="Next">
-                                <span aria-hidden="true">次へ &raquo;</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">次へ &raquo;</span></li>
-                    {% endif %}
-                </ul>
-            </nav>
-        {% endif %}
-
-    {% else %}
-        <div class="alert alert-info text-center mt-4">
-            {% if selected_status == 'unread' %}
-                確認待ちの連絡帳はありません。素晴らしいです！
-            {% elif request.GET.date %}
-                {{ request.GET.date }} 分の連絡帳の提出はありませんでした。
-            {% else %}
-                本日提出された担当クラスの連絡帳はまだありません。
-            {% endif %}
+        <!-- 生徒名簿テーブル -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">生徒名簿と提出ステータス</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col" class="text-center" style="width: 10%;">番号</th>
+                                <th scope="col" style="width: 25%;">生徒氏名</th>
+                                <th scope="col" style="width: 20%;">クラス</th>
+                                <th scope="col" class="text-center" style="width: 15%;">提出</th>
+                                <th scope="col" class="text-center" style="width: 15%;">先生確認</th>
+                                <th scope="col" class="text-center" style="width: 15%;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- object_list は CustomUser (生徒) オブジェクトのリスト -->
+                            {% for student in object_list %}
+                                <tr>
+                                    <td class="text-center small">{{ student.student_id|default:"-" }}</td>
+                                    <td>{{ student.full_name }}</td>
+                                    <td class="small text-muted">{{ student.classroom }}</td>
+                                    
+                                    {% with record=student.record_of_the_day.0 %}
+                                        <td class="text-center">
+                                            {% if record %}
+                                                <span class="badge rounded-pill bg-success p-2">
+                                                    <i class="bi bi-check-circle"></i> 提出済
+                                                </span>
+                                            {% else %}
+                                                <span class="badge rounded-pill bg-danger p-2">
+                                                    <i class="bi bi-x-circle"></i> 未提出
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center small">
+                                            {% if record %}
+                                                {% if record.is_read %}
+                                                    <span class="text-success fw-bold">
+                                                        既読 ({{ record.read_by.full_name|default:"不明" }})
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-warning fw-bold">
+                                                        <i class="bi bi-envelope-fill"></i> 未読
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if record %}
+                                                <a href="{% url 'notebook:teacher_record_detail' pk=record.pk %}" 
+                                                   class="btn btn-outline-info btn-sm">
+                                                    <i class="bi bi-eye"></i> 詳細
+                                                </a>
+                                            {% else %}
+                                                <!-- 未提出の場合、過去の記録へのリンクなどを検討できますが、今回は '-' のままにします -->
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                                                    <i class="bi bi-dash-circle"></i>
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    {% endwith %}
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        該当する生徒の記録は見つかりませんでした。
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    {% endif %}
+        
+        <!-- ページネーション (Djangoのページネーションロジックが必要) -->
+        {% if is_paginated %}
+        <nav aria-label="ページネーション" class="mt-4">
+            <ul class="pagination justify-content-center shadow-sm">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&date={{ date_filter_value }}&status={{ selected_status }}" aria-label="前へ">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+
+                {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}&date={{ date_filter_value }}&status={{ selected_status }}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&date={{ date_filter_value }}&status={{ selected_status }}" aria-label="次へ">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

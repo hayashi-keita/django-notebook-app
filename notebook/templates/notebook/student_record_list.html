@@ -14,7 +14,7 @@
                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                 
                 {# 記録と状態 #}
-                <strong>{{ obj.date_for|date:'Y年m月d日'}} 提出分</strong>
+                <strong>{{ obj.date_for|date:'Y年m月d日'}} 提出記録</strong>
                 <p class="mb-0 small text-muted">体調： {{ obj.physical_condition }} / メンタル： {{ obj.mental_condition }}</p>
                 {# 既読ステータス #}
                 {% if obj.is_read %}
@@ -29,6 +29,7 @@
             </a>
             {% endfor %}
         </div>
+        <a href="{% url 'notebook:student_record_graph' %}" class="btn btn-secondary mt-3">推移グラフへ</a>
     {% else %}
         <div class="alert alert-info text-center">
             まだ提出された連絡帳の記録はありません。

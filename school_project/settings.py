@@ -65,6 +65,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'notebook.context_processors.unread_notification_context',
+                'notebook.context_processors.get_returned_count_for_student',
             ],
         },
     },

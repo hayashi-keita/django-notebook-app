@@ -57,6 +57,7 @@ class DailyRecord(models.Model):
     
     reflection = models.TextField(blank=True, verbose_name='振り返り')
     is_read = models.BooleanField(default=False, verbose_name='既読')
+    is_returned_to_student = models.BooleanField(default=False, verbose_name='生徒宛通知')
     read_at = models.DateField(blank=True, null=True)
     read_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -120,8 +121,8 @@ class TeacherLog(models.Model):
     text = models.TextField(verbose_name='ログ内容')
     # 教師間での重要度を示すフラグ
     is_important = models.BooleanField(default=False, verbose_name='重要フラグ（会議議題など）')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
 
     class Meta:
         verbose_name = '教師間共有ログ'
@@ -131,3 +132,23 @@ class TeacherLog(models.Model):
     def __str__(self):
         created_date_str = self.created_at.strftime('%Y/%m/%d %H:%M')
         return f"{self.student.full_name}に関する by {self.teacher.full_name} ({created_date_str})"
+    
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        verbose_name='受信者',
+    )
+    related_record = models.ForeignKey(
+        DailyRecord,
+        on_delete=models.CASCADE,
+        blank=True, null=True,
+        related_name='notifications'
+    )
+    message = models.CharField(max_length=255, verbose_name='メッセージ')
+    is_read = models.BooleanField(default=False, verbose_name='既読')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+
+    def __str__(self):
+        return f'{self.recipient} - {self.message}'

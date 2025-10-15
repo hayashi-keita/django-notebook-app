@@ -36,7 +36,7 @@
                 {# 記録内容の表示 #}
                 <h5 class="mt-4 mb-3 text-secondary"><i class="bi bi-file-text me-2"></i> 生徒の提出内容</h5>
                 
-                {# 📝 修正箇所：体調のレベルとメモを表示 #}
+                {# 体調のレベルとメモを表示 #}
                 <div class="row mb-3 border-bottom pb-2">
                     <div class="col-sm-4 text-muted fw-bold">体調（10段階評価）：</div>
                     <div class="col-sm-8 fw-bold">{{ object.physical_level }}</div>
@@ -46,7 +46,7 @@
                     <div class="col-sm-8">{{ object.physical_condition|default:'(なし)' }}</div>
                 </div>
 
-                {# 📝 修正箇所：メンタルのレベルとメモを表示 #}
+                {# メンタルのレベルとメモを表示 #}
                 <div class="row mb-3 border-bottom pb-2">
                     <div class="col-sm-4 text-muted fw-bold">メンタル（10段階評価）：</div>
                     <div class="col-sm-8 fw-bold">{{ object.mental_level }}</div>
@@ -63,14 +63,23 @@
 
                 <hr class="mt-4">
 
-                {# 既読ステータスとアクション #}
+                {# 既読ステータスとアクション (修正箇所) #}
                 <h5 class="mb-3"><i class="bi bi-bookmark-check me-2"></i> 確認状況</h5>
                 {% if object.is_read %}
                     <div class="alert alert-success text-center">
                         <i class="bi bi-check-circle-fill me-2"></i>
                         **この記録は既読です。**（確認者：{{ object.read_by.full_name }}, 日付：{{ object.read_at|date:'Y/m/d' }}）
-                        {# 💡 修正点1: 'Y/m/d H:i' を 'Y/m/d' に変更 #}
                     </div>
+                    
+                    {# 💡 修正点: 既読取り消しアクションのフォームを追加 #}
+                    <form method="post" class="text-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="unmark_read" value="true">
+                        <button class="btn btn-lg btn-warning mt-3">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i> 既読を取り消して未読に戻す（差し戻し）
+                        </button>
+                    </form>
+                    
                 {% else %}
                     <div class="alert alert-danger text-center">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -88,7 +97,7 @@
 
                 <hr class="mt-4">
 
-                {# 💡 担任からのフィードバック (メモ & スタンプ) セクション #}
+                {# 担任からのフィードバック (メモ & スタンプ) セクション #}
                 <h5 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック（生徒向け）</h5>
                 
                 {# 既存メモの表示エリア #}
@@ -98,7 +107,7 @@
                             メモ記入者: **{{ current_memo.teacher.full_name }}** (最終更新: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
                         </p>
                         
-                        {# スタンプ表示... (以降省略) #}
+                        {# スタンプ表示 #}
                         <h4 class="d-flex align-items-center mb-2">
                             {% if current_memo.stamp == 'LIKE' %}
                                 <span class="badge bg-success me-2"> 
@@ -135,7 +144,7 @@
                     </div>
                 {% endif %}
 
-                {# メモ記入/編集フォーム... (以降省略) #}
+                {# メモ記入/編集フォーム #}
                 
                 <h6 class="mt-4 mb-3">
                     {% if current_memo %}

@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}先生用 評価推移グラフ{% endblock %}
+
+{% block contents %}
+<div class="container mt-4">
+    <h1 class="mb-4">生徒の評価推移グラフ (先生用)</h1>
+    
+    <!-- フィルタリングUI -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">フィルタリングと比較</h5>
+            <div class="row g-3 align-items-end">
+                <!-- フィルタタイプ選択 -->
+                <div class="col-md-3">
+                    <label for="filter_type" class="form-label">フィルタ対象</label>
+                    <select id="filter_type" class="form-select">
+                        <option value="all" {% if filter_params.filter == 'all' %}selected{% endif %}>クラス全体平均</option>
+                        <option value="grade" {% if filter_params.filter == 'grade' %}selected{% endif %}>学年別平均</option>
+                        <option value="student" {% if filter_params.filter == 'student' %}selected{% endif %}>生徒個人</option>
+                    </select>
+                </div>
+
+                <!-- フィルタ値選択 (学年/生徒) -->
+                <div class="col-md-5">
+                    <label for="filter_value" class="form-label">対象選択</label>
+                    <select id="filter_value" class="form-select" disabled>
+                        {# テンプレート側で値をセットするためのデータはJSで渡されるため、ここでは現在の選択肢のみを表示 #}
+                        {% if filter_params.filter == 'grade' %}
+                            {% for grade in available_grades %}
+                                <option value="{{ grade }}" {% if filter_params.value|slugify == grade|slugify %}selected{% endif %}>{{ grade }}年生</option>
+                            {% endfor %}
+                        {% elif filter_params.filter == 'student' %}
+                            {% for student in available_students %}
+                                <option value="{{ student.pk }}" {% if filter_params.value|slugify == student.pk|slugify %}selected{% endif %}>{{ student.name }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="">フィルタリングなし</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- 適用ボタン -->
+                <div class="col-md-4 d-flex justify-content-end">
+                    <button class="btn btn-primary me-2" onclick="applyFilter()">
+                        <i class="fas fa-filter"></i> 適用
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetFilter()">
+                        リセット
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- グラフ描画エリア -->
+    <h2 class="h5 mb-3">{{ current_filter_label }} の評価推移</h2>
+    {% if total_records > 0 %}
+        <p class="alert alert-info">
+            <strong>比較ベンチマーク:</strong> {% if filter_params.filter != 'student' %}破線は**{{ compare_label }}**を示します。{% else %}グラフには{{ compare_label }}との比較が表示されます。{% endif %}
+        </p>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div style="height: 500px;">
+                    <canvas id="recordChart"></canvas>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle"></i> 該当するレコードがありません。フィルタ条件を変更してください。
+        </div>
+    {% endif %}
+
+    <div class="text-center my-4">
+        <a href="{% url 'notebook:teacher_record_list' %}" class="btn btn-outline-dark">
+            <i class="fas fa-home"></i> ダッシュボードへ戻る
+        </a>
+    </div>
+
+    {# JSONデータを取得するために、|safeフィルターを使用する（ユーザー報告に基づいて） #}
+    {# 🚨 この方法はセキュリティリスクがあるため、本来はjson_scriptを推奨しますが、動作を優先します #}
+    <input type="hidden" id="dates-json" value='{{ dates_json | default:"[]" | safe }}'>
+    <input type="hidden" id="datasets-json" value='{{ datasets_json | default:"[]" | safe }}'>
+    <input type="hidden" id="filter-params-json" value='{{ filter_params | default:"{}" | safe }}'>
+    <input type="hidden" id="available-grades-json" value='{{ available_grades | default:"[]" | safe }}'>
+    <input type="hidden" id="available-students-json" value='{{ available_students | default:"[]" | safe }}'>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<!-- Font Awesome CDN for icons ( assuming it's used in base.html) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- Chart.js CDN (グラフ描画ライブラリ) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<script>
+    // --- JSONデータを安全に取得 (hidden input fieldsから) ---
+    // 💡 ユーザー報告の通り、JSON文字列をパースする方式に戻します。
+    // 値が空の場合に備えてdefault:"[]"またはdefault:"{}"を適用します。
+    
+    function safeParse(id, fallback) {
+        const element = document.getElementById(id);
+        if (!element) return fallback;
+        try {
+            // hidden input fieldから値を取得し、JSONとしてパース
+            return JSON.parse(element.value);
+        } catch (e) {
+            console.error(`Error parsing JSON for ${id}:`, e);
+            return fallback;
+        }
+    }
+
+    const dates = safeParse('dates-json', []);
+    const datasets = safeParse('datasets-json', []);
+    const filterParams = safeParse('filter-params-json', {});
+    const availableGrades = safeParse('available-grades-json', []);
+    const availableStudents = safeParse('available-students-json', []);
+    
+    // その他の非JSONデータはそのまま
+    const yAxisLabel = "{{ yAxisLabel }}";
+    const totalRecords = {{ total_records }};
+
+    // フィルタリングUIの要素を格納する変数 (DOMContentLoaded後にセット)
+    let filterTypeSelect = null;
+    let filterValueSelect = null;
+    
+    
+    // --- フィルタリングロジック ---
+    
+    function updateFilterValueOptions() {
+        // 要素が存在するか確認
+        if (!filterTypeSelect || !filterValueSelect) {
+            console.warn("Filter UI elements not found.");
+            return;
+        }
+
+        const type = filterTypeSelect.value;
+        filterValueSelect.innerHTML = ''; // オプションをクリア
+        
+        if (type === 'all') {
+            filterValueSelect.setAttribute('disabled', 'true');
+            filterValueSelect.innerHTML = '<option value="">全クラス平均</option>';
+            return;
+        }
+
+        filterValueSelect.removeAttribute('disabled');
+        
+        if (type === 'grade') {
+            if (availableGrades.length === 0) {
+                filterValueSelect.innerHTML = '<option value="" disabled>学年データなし</option>';
+            }
+            availableGrades.forEach(grade => {
+                const option = document.createElement('option');
+                option.value = grade;
+                option.textContent = `${grade}年生`;
+                if (filterParams.filter === 'grade' && String(filterParams.value) === String(grade)) {
+                    option.selected = true;
+                }
+                filterValueSelect.appendChild(option);
+            });
+        } else if (type === 'student') {
+            if (availableStudents.length === 0) {
+                filterValueSelect.innerHTML = '<option value="" disabled>生徒データなし</option>';
+            }
+            availableStudents.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.pk;
+                option.textContent = student.name;
+                if (filterParams.filter === 'student' && String(filterParams.value) === String(student.pk)) {
+                    option.selected = true;
+                }
+                filterValueSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // フィルタ適用処理
+    function applyFilter() {
+        if (!filterTypeSelect || !filterValueSelect) return;
+        
+        const filterSelect = filterTypeSelect.value;
+        const valueSelect = filterValueSelect;
+        let url = new URL(window.location.href);
+        
+        // フィルタタイプを設定
+        url.searchParams.set('filter', filterSelect);
+
+        if (filterSelect === 'grade' || filterSelect === 'student') {
+            // 値を選択しているか確認
+            if (valueSelect.value) {
+                url.searchParams.set('value', valueSelect.value);
+                window.location.href = url.toString();
+            } else {
+                // アラートの代わりにカスタムUIを使用することが推奨されます
+                console.error('フィルタリング対象を選択してください。');
+                // 仮のメッセージ表示
+                const message = document.createElement('div');
+                message.className = 'alert alert-danger mt-3';
+                message.textContent = 'フィルタリング対象を選択してください。';
+                document.querySelector('.card-body').appendChild(message);
+                setTimeout(() => message.remove(), 3000);
+            }
+        } else {
+            // 'all' の場合、valueパラメータを削除して適用
+            url.searchParams.delete('value');
+            window.location.href = url.toString();
+        }
+    }
+
+    // フィルタ解除処理
+    function resetFilter() {
+        window.location.href = window.location.pathname; // フィルタなしで再読み込み
+    }
+
+    // 初期化 (DOMの読み込み完了を待つ)
+    document.addEventListener('DOMContentLoaded', () => {
+        // DOMContentLoaded内で要素を取得し、グローバル変数に代入
+        filterTypeSelect = document.getElementById('filter_type');
+        filterValueSelect = document.getElementById('filter_value');
+        
+        if (filterTypeSelect && filterValueSelect) {
+            updateFilterValueOptions(); // 初期状態でドロップダウンを更新
+            filterTypeSelect.addEventListener('change', updateFilterValueOptions);
+        }
+    });
+
+    // --- Chart.js 描画ロジック ---
+    if (totalRecords > 0 && datasets.length > 0) {
+        // チャート要素の存在確認
+        const chartElement = document.getElementById('recordChart');
+        
+        if (chartElement) {
+            const ctx = chartElement.getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates, // X軸: 日付
+                    datasets: datasets // ビュー側で完全に構築されたデータセット配列
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // コンテナのサイズに合わせて調整
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '体調・メンタル 評価推移',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                // 小数点以下の表示を制御
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        // filterParamsはJSオブジェクトになっている
+                                        label += context.parsed.y.toFixed(filterParams.filter === 'student' ? 0 : 2); // 個人の場合は整数、平均は小数点2桁
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { 
+                                display: true,
+                                text: '日付'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: yAxisLabel // 動的なラベル (平均評価レベル / 評価レベル)
+                            },
+                            min: 1, // 最小値を1に固定
+                            max: 10, // 最大値を10に固定
+                            ticks: {
+                                stepSize: 1 // 1刻み
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } else {
+        // データがない場合のメッセージ表示を強化 (HTML側で表示されるため、ここでは主にコンソールログ)
+        console.log("No data or records to display the chart.");
+    }
+</script>
+{% endblock %}

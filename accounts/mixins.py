@@ -15,14 +15,14 @@ class AdminOnlyMixin(LoginRequiredMixin):
         return result
 
 # ログインかつ生徒であるかをチェックする
-class StudentOnlyMixin(UserPassesTestMixin):
+class StudentAndAdminMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_student
+        return self.request.user.is_student or self.request.user.is_admin
 
 # 担任または管理者であるかをチェック
 class TeacherAndAdminOnlyMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.role == 'TEACHER' or self.request.user.is_admin
+        return self.request.user.is_teacher or self.request.user.is_admin
 
 # 自分自身または管理者かをチェック
 class UserIsOwnerOrAdminMixin(UserPassesTestMixin):   

@@ -6,18 +6,22 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
-            {# 💡 日付表示の修正 (CreateViewのとき: record_date, UpdateViewのとき: form.instance.date_for) #}
+            {# 💡 日付表示の修正 (CreateViewのとき: default_record_date, UpdateViewのとき: form.instance.date_for) #}
             {% if form.instance.pk %}
                 <h2 class="mb-4 text-center">連絡帳の編集（{{ form.instance.date_for|date:'Y年m月d日'}}分）</h2>
             {% else %}
-                <h2 class="mb-4 text-center">連絡帳の提出（{{ record_date|date:'Y年m月d日'}}分）</h2>
+                {# 提出の場合、タイトルを簡略化し、日付はフォームで選択してもらう #}
+                <h2 class="mb-4 text-center">連絡帳の提出</h2>
+                <div class="alert alert-info text-center small mb-4">
+                    <i class="bi bi-info-circle me-1"></i> 提出日は変更可能です（初期値は前日: {{ record_date|date:'Y年m月d日'}}）
+                </div>
             {% endif %}
 
             <div class="card p-4 shadow">
                 <form method="post">
                     {% csrf_token %}
                     
-                    {# 💡 フォームのフィールドをレンダリング。体調レベル/メモ、メンタルレベル/メモ、振り返りが順番に表示されます。 #}
+                    {# 💡 フォームのフィールドをレンダリング。date_forフィールド（日付）が最初に来るようにします #}
                     {% for field in form %}
                         <div class="mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
