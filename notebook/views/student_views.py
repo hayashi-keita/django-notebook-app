@@ -1,13 +1,16 @@
 from django.shortcuts import redirect
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
 from django.urls import reverse_lazy, reverse
+from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
+from django.db.models import Q
 from datetime import date, timedelta
 from ..models import DailyRecord, Notification
 from ..forms import DailyRecordForm
 from accounts.mixins import StudentAndAdminMixin
+from datetime import datetime
 import json
 
 
@@ -36,6 +39,8 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentAndAdminMixin, CreateView
         if DailyRecord.objects.filter(student=self.request.user, date_for=submitted_date).exists():
             messages.error(self.request, f'{submitted_date}分の連絡帳は既に提出済です。')
             return redirect(self.success_url)
+        response = super().form_valid(form)
+
         messages.success(self.request, f'{submitted_date}分の連絡帳を提出しました。')
         Notification.objects.create(
             user=self.request.user.classroom.homeroom_teacher,
@@ -43,14 +48,51 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentAndAdminMixin, CreateView
             related_record=form.instance,
         )
 
-        return super().form_valid(form)
+        return response
 
 class StudentRecordListView(LoginRequiredMixin, StudentAndAdminMixin, ListView):
     model = DailyRecord
     template_name = 'notebook/student_record_list.html'
+    paginate_by = 10
 
     def get_queryset(self):
-        return DailyRecord.objects.filter(student=self.request.user).order_by('-date_for')
+        queryset = DailyRecord.objects.filter(student=self.request.user).order_by('-date_for')
+
+        self.start_date_param = self.request.GET.get('start_date')
+        self.end_date_param = self.request.GET.get('end_date')
+        self.selected_read_status = self.request.GET.get('read_status', 'all')
+        # start_date 処理: 開始日以降
+        if self.start_date_param:
+            try:
+                start_date_obj = date.fromisoformat(self.start_date_param)
+                queryset = queryset.filter(date_for__gte=start_date_obj)
+            except ValueError:
+                pass
+        # end_date 処理: 終了日以前
+        if self.end_date_param:
+            try:
+                end_date_obj = date.fromisoformat(self.end_date_param)
+                queryset = queryset.filter(date_for__lte=end_date_obj)
+            except ValueError:
+                pass
+        
+        if self.selected_read_status == 'unread':
+            queryset = queryset.filter(is_read=False)
+        elif self.selected_read_status == 'read':
+            queryset = queryset.filter(is_read=True)
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['start_date_filter_value'] = self.start_date_param if self.start_date_param else ''
+        context['end_date_filter_value'] = self.end_date_param if self.end_date_param else ''
+        context['selected_read_status'] = self.selected_read_status
+        # 未読レコード数の計算
+        context['unread_record_count'] = DailyRecord.objects.filter(
+            student=self.request.user,
+            is_read=False,
+        ).count()    
+        return context
 
 class StudentRecordDetailView(LoginRequiredMixin, StudentAndAdminMixin, DetailView):
     model = DailyRecord
@@ -62,13 +104,6 @@ class StudentRecordDetailView(LoginRequiredMixin, StudentAndAdminMixin, DetailVi
         ).select_related('read_by', 'student__classroom',
         ).prefetch_related('memos__teacher')
         return queryset
-    
-    def get_object(self, queryset=None):
-        record = super().get_object(queryset)
-        if record.is_returned_to_student:
-            record.is_returned_to_student = False
-            record.save(update_fields=['is_returned_to_student'])
-        return record
 
     # コンテキストデータに既存のメモ情報（表示用）
     def get_context_data(self, **kwargs):

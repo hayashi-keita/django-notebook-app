@@ -5,16 +5,34 @@
 
 {% block contents %}
 <div class="container mt-4">
-    <h2>通知一覧</h2>
-    <ul class="list-group">
-        {% for obj in object_list %}
-        <li class="list-group-item {% if not obj.is_read %}fw-bold{% endif %}">
-            {{ obj.message }}
-            <small class="text-muted float-end">{{ obj.created_at|date:"Y-m-d H:i" }}</small>
-        </li>
-        {% empty %}
-        <li class="list-group-item">通知はありません。</li>
-        {% endfor %}
-    </ul>
+    <h2 class="mb-3">📢 通知一覧</h2>
+    
+    {% for obj in object_list %}
+        <div class="card mb-2 {% if not obj.is_read %}border-primary{% endif %}">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="mb-1">{{ obj.message }}</p>
+                    <small class="text-muted">{{ obj.created_at|date:'Y/m/d H:i' }}</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    {% if not obj.is_read %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="read_id" value="{{ obj.pk }}">
+                            <button type="submit" class="btn btn-sm btn-success">既読</button>
+                        </form>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_id" value="{{ obj.pk }}">
+                        <button type="submit" class="btn btn-sm btn-danger">削除</button> 
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p>通知はありません。</p>
+    {% endfor %}
 </div>
 {% endblock %}

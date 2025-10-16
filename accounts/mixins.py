@@ -49,4 +49,3 @@ class UserIsOwnerOrStaffMixin(UserPassesTestMixin):
         is_owner = self.request.user.pk == user_pk_in_url
         is_staff = self.request.user.is_teacher or self.request.user.is_admin
         return is_owner or is_staff
-

@@ -23,8 +23,12 @@ urlpatterns = [
     path('teacher/record/<int:pk>/detail/', teacher_views.TeacherRecordDetailView.as_view(), name='teacher_record_detail'),
     path('teacher/record/<int:record_pk>/memo/create/', teacher_views.MemoCreateView.as_view(), name='record_memo_create'),
     path('teacher/record/<int:pk>/memo/update/', teacher_views.MemoUpdateView.as_view(), name='record_memo_update'),
+    path('teacher/record/<int:pk>/memo/delete/', teacher_views.MemoDeleteView.as_view(), name='record_memo_delete'),
     path('teacher/logs/', teacher_views.TeacherLogListView.as_view(), name='teacher_log_list'),
     path('teacher/log/<int:student_pk>/create/', teacher_views.TeacherLogCreateView.as_view(), name='teacher_log_create'),
+    path('teacher/log/<int:pk>/update/', teacher_views.TeacherLogUpdateView.as_view(), name='teacher_log_update'),
+    path('teacher/log/<int:pk>/delete/', teacher_views.TeacherLogDeleteView.as_view(), name='teacher_log_delete'),
+    path('teacher/log/<int:pk>/detail/', teacher_views.TeacherLogDetailView.as_view(), name='teacher_log_detail'),
     path('teacher/record/graph/', teacher_views.TeacherRecordGraphView.as_view(), name='teacher_record_graph'),
     # 管理者向け学年管理
     path('management/grades/', admin_views.GradeListView.as_view(), name='grade_list'),

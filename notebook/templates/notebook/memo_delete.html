@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}指導メモ削除確認{% endblock %}
+
+{% block contents %}
+
+<div class="container my-5">
+    <div class="card shadow-lg p-4 mx-auto" style="max-width: 600px;">
+        <h2 class="card-title text-danger mb-4">
+            <i class="bi bi-trash-fill me-2"></i> 指導メモの削除確認
+        </h2>
+
+        <div class="alert alert-warning border-start border-danger border-5 p-3">
+            <p class="mb-0 fw-bold">この操作は元に戻せません。本当に削除してもよろしいですか？</p>
+        </div>
+
+        <div class="mb-4 p-3 border rounded bg-light">
+            <h5 class="text-secondary">対象連絡帳:</h5>
+            <p class="mb-1">
+                <strong>{{ record.student.full_name }}</strong> ({{ record.student.classroom.grade }} {{ record.student.classroom.name }})
+            </p>
+            <p class="mb-0">
+                日付: {{ record.date|date:"Y年n月j日 (D)" }}
+            </p>
+        </div>
+
+        <h5 class="text-muted">削除されるメモの内容:</h5>
+        <div class="p-3 border rounded mb-4">
+            <p class="mb-0 text-dark">{{ object.text|linebreaksbr }}</p>
+            <small class="text-muted d-block mt-2">作成者: {{ object.teacher.full_name }}</small>
+        </div>
+        
+        <form method="post">{% csrf_token %}
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'notebook:teacher_record_detail' pk=record.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i> キャンセル
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i> 削除を実行
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

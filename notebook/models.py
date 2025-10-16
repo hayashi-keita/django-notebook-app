@@ -57,7 +57,6 @@ class DailyRecord(models.Model):
     
     reflection = models.TextField(blank=True, verbose_name='振り返り')
     is_read = models.BooleanField(default=False, verbose_name='既読')
-    is_returned_to_student = models.BooleanField(default=False, verbose_name='生徒宛通知')
     read_at = models.DateField(blank=True, null=True)
     read_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -151,4 +150,4 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
 
     def __str__(self):
-        return f'{self.recipient} - {self.message}'
+        return f'{self.user} - {self.message}'

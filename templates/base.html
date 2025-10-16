@@ -45,11 +45,11 @@
                             {% if request.user.role == 'STUDENT' %}
                                 <a href="{% url 'notebook:student_record_list' %}" class="nav-link">自分の記録</a>
                             {% elif request.user.role == 'TEACHER' %}
-                                <a href="" class="nav-link">クラス管理</a>
+                                <a href="{% url 'notebook:teacher_record_list' %}" class="nav-link">クラス管理</a>
                             {% endif %}
                             
                             {# 💡 通知機能 #}
-                            {% if request.user.role == 'TEACHER' or request.user.role == 'ADMIN' %}
+                            {% if request.user.is_teacher or request.user.is_admin %}
                                 <a href="{% url 'notebook:notification_list'%}" class="nav-link position-relative">
                                     通知
                                     {% if unread_notification_count > 0 %}
@@ -59,12 +59,12 @@
                                         </span>
                                     {% endif %}
                                 </a>
-                            {% elif request.user.role == 'STUDENT' %}
-                                <a href="{% url 'notebook:student_record_list' %}" class="nav-link position-relative">
-                                    📬 返却連絡帳
-                                    {% if returned_count > 0 %}
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
-                                            {{ returned_count }}
+                            {% elif request.user.is_student %}
+                                <a href="{% url 'notebook:notification_list' %}" class="nav-link position-relative">
+                                    📬 通知
+                                    {% if unread_notification_count > 0 %}
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {{ unread_notification_count }}
                                             <span class="visually-hidden">返却通知</span>
                                         </span>
                                     {% endif %}

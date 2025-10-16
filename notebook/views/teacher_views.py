@@ -1,4 +1,4 @@
-from django.views.generic import ListView, DetailView, UpdateView, CreateView, TemplateView
+from django.views.generic import ListView, DetailView, UpdateView, CreateView, TemplateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect
@@ -114,22 +114,19 @@ class TeacherRecordDetailView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Deta
             record.is_read = True
             record.read_at = date.today()
             record.read_by = request.user
-            record.is_returned_to_student = True
-            record.save()
+            record.save(update_fields=['is_read', 'read_at', 'read_by'])
             messages.success(request, f'{record.date_for}分の連絡帳を既読処理しました。')
             Notification.objects.create(
                 user=record.student,
                 message=f'{record.date_for}分の連絡帳が{request.user.get_full_name()}先生に確認されました。',
                 related_record=record,
             )
-
         # --- 既読取り消し（差し戻し）アクション ---
         elif 'unmark_read' in request.POST and record.is_read:
             record.is_read = False
             record.read_at = None
             record.read_by = None
-            record.is_returned_to_student = False
-            record.save()
+            record.save(update_fields=['is_read', 'read_at', 'read_by'])
             messages.info(request, f'{record.date_for}分の連絡帳の既読処理を取り消し、未読に戻しました。')
             Notification.objects.create(
                 user=record.student,
@@ -189,6 +186,25 @@ class MemoUpdateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, UpdateView):
         return context
     
     def get_success_url(self):
+        return reverse('notebook:teacher_record_detail', kwargs={'pk': self.object.record.pk})
+
+class MemoDeleteView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, DeleteView):
+    model = Memo
+    template_name = 'notebook/memo_delete.html'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_admin:
+            return queryset
+        return queryset.filter(teacher=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['record'] = self.object.record
+        return context
+    
+    def get_success_url(self):
+        messages.success(self.request, '指導メモを削除しました。')
         return reverse('notebook:teacher_record_detail', kwargs={'pk': self.object.record.pk})
 
 class TeacherLogCreateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, CreateView):
@@ -280,6 +296,52 @@ class TeacherLogListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView)
         context['selected_teacher_obj'] = selected_teacher_obj
 
         return context
+
+class TeacherLogUpdateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, UpdateView):
+    model = TeacherLog
+    form_class = TeacherLogForm
+    template_name = 'notebook/teacher_log_form.html'
+    success_url = reverse_lazy('notebook:teacher_log_list')
+
+    def get_queryset(self):
+        if self.request.user.is_admin:
+            return TeacherLog.objects.all()
+        return TeacherLog.objects.filter(teacher=self.request.user)
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'ログを更新しました。')
+        return super().form_valid(form)
+
+class TeacherLogDeleteView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, DeleteView):
+    model = TeacherLog
+    template_name = 'notebook/teacher_log_delete.html'
+    success_url = reverse_lazy('notebook:teacher_log_list')
+
+    def get_queryset(self):
+        if self.request.user.is_admin:
+            return TeacherLog.objects.all()
+        return TeacherLog.objects.filter(teacher=self.request.user)
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'ログを削除しました。')
+        return super().delete(request, *args, **kwargs)
+
+class TeacherLogDetailView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, DetailView):
+    model = TeacherLog
+    template_name = 'notebook/teacher_log_detail.html'
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin:
+            return TeacherLog.objects.all()
+        
+        current_grade = user.grade
+        if not current_grade:
+            return TeacherLog.objects.none()
+        
+        return TeacherLog.objects.filter(
+            student__grade=current_grade,
+        ).select_related('student', 'teacher', 'student__classroom')
 
 # 先生が全生徒の評価推移を把握するためのグラフビュー
 class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, TemplateView):
