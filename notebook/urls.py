@@ -18,6 +18,7 @@ urlpatterns = [
     path('student/record/<int:pk>/update/', student_views.StudentRecordUpdateView.as_view(), name='student_record_update'),
     path('student/record/<int:pk>/delete/', student_views.StudentRecordDeleteView.as_view(), name='student_record_delete'),
     path('student/record/graph/', student_views.StudentRecordGraphView.as_view(), name='student_record_graph'),
+    path('student/attachment/<int:pk>/delete/', student_views.RecordAttachmentDeleteView.as_view(), name='attachment_delete'),
     # 担任関連
     path('teacher/records/', teacher_views.TeacherRecordListView.as_view(), name='teacher_record_list'),
     path('teacher/record/<int:pk>/detail/', teacher_views.TeacherRecordDetailView.as_view(), name='teacher_record_detail'),

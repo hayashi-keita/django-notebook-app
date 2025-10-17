@@ -6,22 +6,18 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
-            {# 💡 日付表示の修正 (CreateViewのとき: default_record_date, UpdateViewのとき: form.instance.date_for) #}
-            {% if form.instance.pk %}
-                <h2 class="mb-4 text-center">連絡帳の編集（{{ form.instance.date_for|date:'Y年m月d日'}}分）</h2>
-            {% else %}
-                {# 提出の場合、タイトルを簡略化し、日付はフォームで選択してもらう #}
-                <h2 class="mb-4 text-center">連絡帳の提出</h2>
-                <div class="alert alert-info text-center small mb-4">
-                    <i class="bi bi-info-circle me-1"></i> 提出日は変更可能です（初期値は前日: {{ record_date|date:'Y年m月d日'}}）
-                </div>
-            {% endif %}
+            <h2 class="mb-4 text-center">
+                {% if form.instance.pk %}
+                    連絡帳の編集（{{ form.instance.date_for|date:"Y年m月d日" }}分）
+                {% else %}
+                    連絡帳の提出
+                {% endif %}
+            </h2>
 
             <div class="card p-4 shadow">
-                <form method="post">
+                <!-- 編集フォーム -->
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    
-                    {# 💡 フォームのフィールドをレンダリング。date_forフィールド（日付）が最初に来るようにします #}
                     {% for field in form %}
                         <div class="mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
@@ -37,25 +33,69 @@
                         </div>
                     {% endfor %}
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg mt-4">
+                    <!-- 新規添付ファイル -->
+                    <div class="mb-3">
+                        <label class="form-label">添付ファイル（任意）</label>
+                        <div id="file-inputs"></div>
+                        <button id="add-file" type="button" class="btn btn-outline-secondary btn-sm">
+                            + 添付ファイルを追加
+                        </button>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
                             {% if form.instance.pk %}
-                                <i class="bi bi-pencil-square me-2"></i> 修正を保存する
+                                修正を保存
                             {% else %}
-                                <i class="bi bi-send-fill me-2"></i> 提出する
+                                提出
                             {% endif %}
                         </button>
-
-                        {# 💡 編集時のみ表示されるキャンセルボタン #}
-                        {% if form.instance.pk %}
-                            <a href="{% url 'notebook:student_record_detail' form.instance.pk %}" class="btn btn-outline-secondary btn-lg">
-                                キャンセルして詳細に戻る
-                            </a>
-                        {% endif %}
                     </div>
                 </form>
+
+                <!-- 既存添付ファイル -->
+                {% if form.instance.pk and form.instance.attachments.all %}
+                    <hr class="my-4">
+                    <h5>📎 既存添付ファイル</h5>
+                    <ul class="list-group">
+                        {% for attachment in form.instance.attachments.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name|cut:"record_file/" }}</a>
+                                <form method="post" action="{% url 'notebook:attachment_delete' attachment.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">削除</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('add-file').addEventListener('click', function() {
+    const container = document.getElementById('file-inputs');
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('mb-2', 'd-flex', 'align-items-center');
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.name = 'file';
+    input.classList.add('form-control');
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.classList.add('btn', 'btn-danger', 'ms-2');
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', function() {
+        container.removeChild(wrapper);
+    });
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(delBtn);
+    container.appendChild(wrapper);
+});
+</script>
 {% endblock %}

@@ -1,5 +1,5 @@
-from django.shortcuts import redirect
-from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
+from django.shortcuts import redirect, get_object_or_404
+from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.db.models import Q
 from datetime import date, timedelta
-from ..models import DailyRecord, Notification
+from ..models import DailyRecord, Notification, RecordAttachment
 from ..forms import DailyRecordForm
 from accounts.mixins import StudentAndAdminMixin
 from datetime import datetime
@@ -39,15 +39,25 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentAndAdminMixin, CreateView
         if DailyRecord.objects.filter(student=self.request.user, date_for=submitted_date).exists():
             messages.error(self.request, f'{submitted_date}分の連絡帳は既に提出済です。')
             return redirect(self.success_url)
+        
+        if not self.request.user.classroom or not self.request.user.classroom.homeroom_teacher:
+            messages.error(self.request, "担任が設定されていないため提出できません。")
+            return redirect(self.success_url)
+        
         response = super().form_valid(form)
+        # ファイルを取得
+        files = self.request.FILES.getlist('file')
+        for f in files:
+            RecordAttachment.objects.create(record=self.object, file=f)
 
         messages.success(self.request, f'{submitted_date}分の連絡帳を提出しました。')
+
         Notification.objects.create(
-            user=self.request.user.classroom.homeroom_teacher,
-            message=f'{self.request.user.get_full_name()}さんが{submitted_date}分の連絡帳を提出しました。',
+            sender=self.request.user,
+            recipient=self.request.user.classroom.homeroom_teacher,
+            message=f'{self.request.user.full_name}さんが{submitted_date}分の連絡帳を提出しました。',
             related_record=form.instance,
         )
-
         return response
 
 class StudentRecordListView(LoginRequiredMixin, StudentAndAdminMixin, ListView):
@@ -125,6 +135,14 @@ class StudentRecordUpdateView(LoginRequiredMixin, StudentAndAdminMixin, UpdateVi
         if obj.is_read:
             raise PermissionDenied('担任に確認された記録は編集できません。')
         return obj
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        files = self.request.FILES.getlist('file')
+        for f in files:
+            RecordAttachment.objects.create(record=self.object, file=f)
+        messages.success(self.request, '連絡帳を更新しました。')
+        return response
 
     def get_success_url(self):
         return reverse('notebook:student_record_detail', kwargs={'pk': self.object.pk})
@@ -142,6 +160,10 @@ class StudentRecordDeleteView(LoginRequiredMixin, StudentAndAdminMixin, DeleteVi
         if obj.is_read:
             raise PermissionDenied('担任に確認された記録は削除できません。')
         return obj
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, '記録を削除しました。')
+        return super().delete(request, *args, **kwargs)
 
 # グラフ表示用ビュー
 class StudentRecordGraphView(LoginRequiredMixin, StudentAndAdminMixin, TemplateView):
@@ -168,3 +190,12 @@ class StudentRecordGraphView(LoginRequiredMixin, StudentAndAdminMixin, TemplateV
         context['total_records'] = records.count()
 
         return context
+
+class RecordAttachmentDeleteView(LoginRequiredMixin, StudentAndAdminMixin, View):
+    def post(self, request, pk):
+        attachment = get_object_or_404(RecordAttachment, pk=pk)
+        if attachment.record.student != request.user:
+            raise PermissionDenied
+        record_pk = attachment.record.pk
+        attachment.delete()
+        return redirect('notebook:student_record_update', pk=record_pk)

@@ -10,18 +10,18 @@ class NotificationListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Notification.objects.filter(
-            user=self.request.user,
+            recipient=self.request.user,
         ).order_by('-created_at')
     
     def post(self, request, *args, **kwargs):
         if 'read_id' in request.POST:
-            notification = get_object_or_404(Notification, pk=request.POST['read_id'], user=request.user)
+            notification = get_object_or_404(Notification, pk=request.POST['read_id'], recipient=request.user)
             notification.is_read = True
             notification.save()
             messages.success(request, '通知を既読にしました。')
         
         elif 'delete_id' in request.POST:
-            notification = get_object_or_404(Notification, pk=request.POST['delete_id'], user=request.user)
+            notification = get_object_or_404(Notification, pk=request.POST['delete_id'], recipient=request.user)
             notification.delete()
             messages.info(request, '通知を削除しました。')
         

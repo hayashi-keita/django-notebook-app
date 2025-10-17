@@ -8,7 +8,7 @@ def unread_notification_context(request):
     
     if request.user.is_authenticated:
         unread_count = Notification.objects.filter(
-            user=request.user,
+            recipient=request.user,
             is_read=False,
         ).count()
 

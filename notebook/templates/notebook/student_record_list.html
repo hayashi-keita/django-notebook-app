@@ -79,7 +79,7 @@
                         <thead class="table-dark">
                             <tr>
                                 <th scope="col" class="text-center" style="width: 15%;">日付</th>
-                                <th scope="col" style="width: 45%;">コンディションとサマリー</th>
+                                <th scope="col" style="width: 45%;">コンディション・サマリー</th>
                                 <th scope="col" class="text-center" style="width: 15%;">確認状況</th>
                                 <th scope="col" class="text-center" style="width: 25%;">操作</th>
                             </tr>
@@ -93,13 +93,13 @@
                                     <td class="align-middle">
                                         <div class="d-flex flex-column">
                                             <span class="small text-muted">
-                                                体調: {{ record.get_physical_condition_display }} / 
-                                                メンタル: {{ record.get_mental_condition_display }}
+                                                体調: {{ record.get_physical_level_display }} / 
+                                                メンタル: {{ record.get_mental_level_display }}
                                             </span>
                                             <!-- 記録の簡潔な内容を表示 -->
-                                            {% if record.daily_text %}
+                                            {% if record.reflection %}
                                                 <span class="text-truncate" style="max-width: 300px;">
-                                                    {{ record.daily_text|truncatechars:70 }}
+                                                    {{ record.reflection|truncatechars:70 }}
                                                 </span>
                                             {% else %}
                                                 <span class="text-muted fst-italic small">記録内容なし</span>

@@ -37,29 +37,52 @@
                 <h5 class="mt-4 mb-3 text-secondary"><i class="bi bi-file-text me-2"></i> 生徒の提出内容</h5>
                 
                 {# 体調のレベルとメモを表示 #}
-                <div class="row mb-3 border-bottom pb-2">
+                <div class="row mb-3 pb-2">
                     <div class="col-sm-4 text-muted fw-bold">体調（10段階評価）：</div>
                     <div class="col-sm-8 fw-bold">{{ object.physical_level }}</div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mb-3 border-bottom">
                     <div class="col-sm-4 text-muted fw-bold">体調補足メモ：</div>
                     <div class="col-sm-8">{{ object.physical_condition|default:'(なし)' }}</div>
                 </div>
 
                 {# メンタルのレベルとメモを表示 #}
-                <div class="row mb-3 border-bottom pb-2">
+                <div class="row mb-3 pb-2">
                     <div class="col-sm-4 text-muted fw-bold">メンタル（10段階評価）：</div>
                     <div class="col-sm-8 fw-bold">{{ object.mental_level }}</div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mb-3 border-bottom">
                     <div class="col-sm-4 text-muted fw-bold">メンタル補足メモ：</div>
                     <div class="col-sm-8">{{ object.mental_condition|default:'(なし)' }}</div>
                 </div>
 
                 <div class="row mb-3 mt-4">
                     <div class="col-sm-4 text-muted fw-bold">振り返り：</div>
-                    <div class="col-sm-8 border p-2 bg-light">{{ object.reflection|linebreaksbr }}</div>
+                    <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr }}</div>
                 </div>
+
+                {# 添付ファイル表示 #}
+                {% if object.attachments.all %}
+                    <div class="row mb-3 mt-4">
+                        <div class="col-sm-4 text-muted fw-bold">添付ファイル：</div>
+                        <div class="col-sm-8">
+                            <ul class="list-group">
+                                {% for attachment in object.attachments.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
+                                            {{ attachment.file.name|cut:"record_files/" }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="row mb-3 mt-4">
+                        <div class="col-sm-4 text-muted">添付ファイル：</div>
+                        <div class="col-sm-8 border p-2 bg-light rounded text-muted">(なし)</div>
+                    </div>
+                {% endif %}
 
                 <hr class="mt-4">
 

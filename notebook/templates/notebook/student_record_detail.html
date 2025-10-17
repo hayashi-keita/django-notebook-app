@@ -3,7 +3,7 @@
 {% block title %}過去の記録詳細{% endblock %}
 
 {% block contents %}
-<div class="contaier my-5">
+<div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
             <h2 class="mb-4">過去の記録詳細（{{ object.date_for|date:'Y年m月d日'}}分）</h2>
@@ -24,8 +24,6 @@
 
                 {# 記録内容 #}
                 <h4 class="card-title mb-3">提出内容</h4>
-
-                {# 📝 修正箇所：体調のレベルとメモを表示 #}
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">**体調（10段階評価）：**</div>
                     <div class="col-sm-8 fw-bold">{{ object.physical_level }}</div>
@@ -35,7 +33,6 @@
                     <div class="col-sm-8">{{ object.physical_condition|default:'(なし)' }}</div>
                 </div>
 
-                {# 📝 修正箇所：メンタルのレベルとメモを表示 #}
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">**メンタル（10段階評価）：**</div>
                     <div class="col-sm-8 fw-bold">{{ object.mental_level }}</div>
@@ -50,9 +47,32 @@
                     <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr }}</div>
                 </div>
 
+                {# 添付ファイル表示 #}
+                {% if object.attachments.all %}
+                    <div class="row mb-3 mt-4">
+                        <div class="col-sm-4 text-muted">添付ファイル：</div>
+                        <div class="col-sm-8">
+                            <ul class="list-group">
+                                {% for attachment in object.attachments.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
+                                            {{ attachment.file.name|cut:"record_files/" }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="row mb-3 mt-4">
+                        <div class="col-sm-4 text-muted">添付ファイル：</div>
+                        <div class="col-sm-8 border p-2 bg-light rounded text-muted">(なし)</div>
+                    </div>
+                {% endif %}
+
                 <hr class="mt-4">
 
-                {# 担任からのフィードバック (メモ & スタンプ) セクション #}
+                {# 担任からのフィードバック #}
                 <h4 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック</h4>
 
                 {% if current_memo %}
@@ -61,38 +81,32 @@
                             確認者: **{{ current_memo.teacher.full_name }}** (日付: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
                         </p>
                         
-                        {# スタンプ表示 #}
                         <h4 class="d-flex align-items-center mb-2">
                             {% if current_memo.stamp == 'LIKE' %}
-                                {# 💡 LIKE: 背景を濃い緑(bg-success)にし、アイコンと文字を黄色(text-warning)にする #}
                                 <span class="badge bg-success me-2"> 
                                     <i class="bi bi-hand-thumbs-up-fill text-warning me-1"></i> 
                                     <span class="text-warning">イイネ！</span>
                                 </span>
                             {% elif current_memo.stamp == 'GOOD' %}
-                                {# GOOD: 背景を濃い青(bg-primary)、文字とアイコンは白（デフォルト） #}
                                 <span class="badge bg-primary me-2">
                                     <i class="bi bi-star-fill me-1"></i> がんばったね
                                 </span>
                             {% elif current_memo.stamp == 'TRY' %}
-                                {# TRY: 背景を濃い灰色(bg-secondary)、文字とアイコンは水色(text-info) #}
                                 <span class="badge bg-secondary me-2">
                                     <i class="bi bi-lightbulb-fill text-info me-1"></i> 
                                     <span class="text-info">次回に期待</span>
                                 </span>
                             {% elif current_memo.stamp == 'CHECK' %}
-                                {# CHECK: 背景を青(bg-primary)、文字とアイコンは白 #}
                                 <span class="badge bg-primary me-2">
                                     <i class="bi bi-check-square-fill me-1"></i> 確認済
                                 </span>
                             {% else %}
-                                {# スタンプなし: 背景を薄い灰色(bg-light)、文字を濃い灰色(text-muted) #}
                                 <span class="badge bg-light text-muted border me-2"> 
                                     <i class="bi bi-dot me-1"></i> スタンプなし
                                 </span>
                             {% endif %}
                         </h4>
-                        {# メモテキスト表示 #}
+
                         {% if current_memo.text %}
                             <p class="fw-bold">指導コメント:</p>
                             <div class="p-2 border rounded bg-light">

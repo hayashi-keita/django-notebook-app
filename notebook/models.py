@@ -71,6 +71,15 @@ class DailyRecord(models.Model):
     
     def __str__(self):
         return f'{self.student.username} - {self.date_for}'
+
+class RecordAttachment(models.Model):
+    record = models.ForeignKey(DailyRecord, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='record_files/%Y/%m/%d/', verbose_name='添付ファイル')
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name='アップロード日時')
+
+    def __str__(self):
+        return f"{self.record} に添付されたファイル： {self.file.name.split('/')[-1]}"
+
     
 class Memo(models.Model):
     STAMP_CHOICES = (
@@ -133,10 +142,17 @@ class TeacherLog(models.Model):
         return f"{self.student.full_name}に関する by {self.teacher.full_name} ({created_date_str})"
     
 class Notification(models.Model):
-    user = models.ForeignKey(
+    sender = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='notifications',
+        related_name='sent_notifications',
+        verbose_name='送信者',
+        )
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_notifications',
         verbose_name='受信者',
     )
     related_record = models.ForeignKey(

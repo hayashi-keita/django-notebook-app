@@ -117,8 +117,9 @@ class TeacherRecordDetailView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Deta
             record.save(update_fields=['is_read', 'read_at', 'read_by'])
             messages.success(request, f'{record.date_for}分の連絡帳を既読処理しました。')
             Notification.objects.create(
-                user=record.student,
-                message=f'{record.date_for}分の連絡帳が{request.user.get_full_name()}先生に確認されました。',
+                sender=request.user,
+                recipient=record.student,
+                message=f'{record.date_for}分の連絡帳が{request.user.full_name}先生に確認されました。',
                 related_record=record,
             )
         # --- 既読取り消し（差し戻し）アクション ---
@@ -129,8 +130,9 @@ class TeacherRecordDetailView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Deta
             record.save(update_fields=['is_read', 'read_at', 'read_by'])
             messages.info(request, f'{record.date_for}分の連絡帳の既読処理を取り消し、未読に戻しました。')
             Notification.objects.create(
-                user=record.student,
-                message=f'{record.date_for}分の連絡帳が{request.user.get_full_name()}先生に差し戻しされました。',
+                sender=request.user,
+                recipient=record.student,
+                message=f'{record.date_for}分の連絡帳が{request.user.full_name}先生に差し戻しされました。',
                 related_record=record,
             )
         # 処理後、同じページに戻るか、一覧画面に戻る
@@ -203,8 +205,11 @@ class MemoDeleteView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, DeleteView):
         context['record'] = self.object.record
         return context
     
-    def get_success_url(self):
+    def delete(self, request, *args, **kwargs):
         messages.success(self.request, '指導メモを削除しました。')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
         return reverse('notebook:teacher_record_detail', kwargs={'pk': self.object.record.pk})
 
 class TeacherLogCreateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, CreateView):

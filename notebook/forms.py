@@ -1,6 +1,7 @@
 from django import forms
+from django.forms.models import inlineformset_factory
 from django.core.exceptions import ValidationError
-from .models import DailyRecord, Grade, Classroom, Memo, TeacherLog
+from .models import DailyRecord, Grade, Classroom, Memo, RecordAttachment, TeacherLog
 from datetime import date, timedelta
 
 class DailyRecordForm(forms.ModelForm):
