@@ -1,7 +1,7 @@
 from os import name
 from django.urls import path
 
-from notebook.views import notification_views
+from notebook.views import head_teacher_views, notification_views
 from .views import main_views, student_views, teacher_views, admin_views
 
 
@@ -31,6 +31,12 @@ urlpatterns = [
     path('teacher/log/<int:pk>/delete/', teacher_views.TeacherLogDeleteView.as_view(), name='teacher_log_delete'),
     path('teacher/log/<int:pk>/detail/', teacher_views.TeacherLogDetailView.as_view(), name='teacher_log_detail'),
     path('teacher/record/graph/', teacher_views.TeacherRecordGraphView.as_view(), name='teacher_record_graph'),
+    # 学年主任関連
+    path('head_teacher/records/', head_teacher_views.HeadTeacherRecordListView.as_view(), name='head_teacher_record_list'),
+    path('head_teacher/record/<int:pk>/detail/', head_teacher_views.HeadTeacherRecordDetailView.as_view(), name='head_teacher_record_detail'),
+    path('head_teacher/logs/', head_teacher_views.HeadTeacherLogListView.as_view(), name='head_teacher_log_list'),
+    path('head_teacher/log/<int:pk>/detail/', head_teacher_views.HeadTeacherLogDetailView.as_view(), name='head_teacher_log_detail'),
+    path('head_teacher/record/graph/', head_teacher_views.HeadTeacherRecordGraphView.as_view(), name='head_teacher_record_graph'),
     # 管理者向け学年管理
     path('management/grades/', admin_views.GradeListView.as_view(), name='grade_list'),
     path('management/grade/create/', admin_views.GradeCreateView.as_view(), name='grade_create'),

@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}学年主任用 評価推移グラフ{% endblock %}
+
+{% block contents %}
+<div class="container mt-4">
+    <h1 class="mb-4">担当学年の評価推移グラフ (学年主任用)</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">フィルタリングと比較</h5>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="filter_type" class="form-label">フィルタ対象</label>
+                    <select id="filter_type" class="form-select">
+                        <option value="all" {% if request.GET.filter == 'all' or not request.GET.filter %}selected{% endif %}>学年全体平均</option>
+                        <option value="classroom" {% if request.GET.filter == 'classroom' %}selected{% endif %}>クラス別平均</option>
+                    </select>
+                </div>
+
+                <div class="col-md-5">
+                    <label for="filter_value" class="form-label">対象クラス選択</label>
+                    <select id="filter_value" class="form-select" {% if request.GET.filter != 'classroom' %}disabled{% endif %}>
+                        <option value="">クラスを選択してください</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 d-flex justify-content-end">
+                    <button class="btn btn-primary me-2" onclick="applyFilter()">
+                        <i class="fas fa-filter"></i> 適用
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetFilter()">リセット</button>
+                </div>
+            </div>
+
+            <div id="filter-error-message" class="mt-2"></div>
+        </div>
+    </div>
+
+    <h2 class="h5 mb-3">{{ current_filter_label }} の評価推移</h2>
+    {% if total_records > 0 %}
+        <p class="alert alert-info">
+            <strong>比較ベンチマーク:</strong> 破線は <strong>{{ compare_label }}</strong> を示します。
+        </p>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div style="height: 500px;">
+                    <canvas id="recordChart"></canvas>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle"></i> 該当するレコードがありません。フィルタ条件を変更してください。
+        </div>
+        {% if error_message %}
+            <div class="alert alert-danger text-center">{{ error_message }}</div>
+        {% endif %}
+    {% endif %}
+
+    <div class="text-center my-4">
+        <a href="{% url 'notebook:head_teacher_log_list' %}" class="btn btn-outline-dark">
+            <i class="fas fa-home"></i> ダッシュボードへ戻る
+        </a>
+    </div>
+
+    <!-- JSONデータ (hidden inputs) -->
+    <input type="hidden" id="dates-json" value='{{ dates_json|default:"[]"|safe }}'>
+    <input type="hidden" id="datasets-json" value='{{ datasets_json|default:"[]"|safe }}'>
+    <input type="hidden" id="filter-params-json" value='{{ filter_params|default:"{}"|safe }}'>
+    <input type="hidden" id="available-classrooms-json" value='{{ available_classrooms|default:"[]"|safe }}'>
+</div>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<script>
+function safeParse(id, fallback) {
+    try {
+        return JSON.parse(document.getElementById(id)?.value || '');
+    } catch {
+        return fallback;
+    }
+}
+
+const dates = safeParse('dates-json', []);
+const datasets = safeParse('datasets-json', []);
+const filterParams = safeParse('filter-params-json', {});
+const availableClassrooms = safeParse('available-classrooms-json', []);
+const yAxisLabel = "{{ yAxisLabel }}";
+const totalRecords = {{ total_records|default:0 }};
+
+let filterTypeSelect, filterValueSelect;
+
+function showError(message) {
+    const container = document.getElementById('filter-error-message');
+    container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+    setTimeout(() => (container.innerHTML = ''), 3000);
+}
+
+function updateFilterValueOptions() {
+    if (!filterTypeSelect || !filterValueSelect) return;
+
+    const selectedType = filterTypeSelect.value;
+    filterValueSelect.innerHTML = '';
+
+    if (selectedType === 'all') {
+        filterValueSelect.disabled = true;
+        filterValueSelect.innerHTML = `<option value="">学年全体平均</option>`;
+        return;
+    }
+
+    filterValueSelect.disabled = false;
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'クラスを選択してください';
+    filterValueSelect.appendChild(defaultOpt);
+
+    availableClassrooms.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = String(c.pk);
+        opt.textContent = c.name;
+        if (filterParams.value && String(filterParams.value) === String(c.pk)) {
+            opt.selected = true;
+        }
+        filterValueSelect.appendChild(opt);
+    });
+}
+
+function applyFilter() {
+    const type = filterTypeSelect.value;
+    const value = filterValueSelect.value;
+    const url = new URL(window.location.href);
+
+    url.searchParams.set('filter', type);
+    if (type === 'classroom') {
+        if (!value) return showError('クラスを選択してください。');
+        url.searchParams.set('value', value);
+    } else {
+        url.searchParams.delete('value');
+    }
+    window.location.href = url.toString();
+}
+
+function resetFilter() {
+    window.location.href = window.location.pathname;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    filterTypeSelect = document.getElementById('filter_type');
+    filterValueSelect = document.getElementById('filter_value');
+    updateFilterValueOptions();
+    filterTypeSelect.addEventListener('change', updateFilterValueOptions);
+});
+
+// Chart.js
+if (totalRecords > 0 && datasets.length > 0) {
+    const ctx = document.getElementById('recordChart')?.getContext('2d');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: dates, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '体調・メンタル評価推移', font: { size: 16 } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: '日付' } },
+                    y: { title: { display: true, text: yAxisLabel }, min: 1, max: 10, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

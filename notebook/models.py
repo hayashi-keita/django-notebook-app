@@ -7,7 +7,7 @@ class Grade(models.Model):
     name = models.CharField(max_length=50, blank=True, verbose_name='学年名')
 
     def __str__(self):
-        return f'{self.number}年'
+        return f'{self.number}'
 
 class Classroom(models.Model):
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE, related_name='classrooms')

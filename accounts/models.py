@@ -5,6 +5,7 @@ class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('STUDENT', '生徒'),
         ('TEACHER', '先生'),
+        ('HEAD_TEACHER', '学年主任'),
         ('ADMIN', '管理者'),
     )
     GENDER_CHOICES = (
@@ -14,7 +15,7 @@ class CustomUser(AbstractUser):
         ('no_answer', '回答しない'),
     )
 
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='STUDENT')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STUDENT')
     student_id = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name='生徒番号')
 
     grade = models.ForeignKey(
@@ -33,6 +34,13 @@ class CustomUser(AbstractUser):
         related_name='members',
         verbose_name='クラス'
     )
+    head_of_grade = models.ForeignKey(
+        'notebook.Grade',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name='担当学年（主任用）',
+    )
     full_name = models.CharField(max_length=50, verbose_name='氏名')
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, default='no_answer', verbose_name='性別')
 
@@ -47,6 +55,10 @@ class CustomUser(AbstractUser):
     @property
     def is_teacher(self):
         return self.role == 'TEACHER'
+    
+    @property
+    def is_head_teacher(self):
+        return self.role == 'HEAD_TEACHER'
     
     @property
     def is_admin(self):

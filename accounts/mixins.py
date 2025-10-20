@@ -24,6 +24,11 @@ class TeacherAndAdminOnlyMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_teacher or self.request.user.is_admin
 
+# 学年主任または管理者であるかをチェック
+class HeadTeacherAndAdminOnlyMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_head_teacher or self.request.user.is_admin
+
 # 自分自身または管理者かをチェック
 class UserIsOwnerOrAdminMixin(UserPassesTestMixin):   
     def test_func(self):

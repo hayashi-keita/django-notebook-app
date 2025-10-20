@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}学年主任用 共有メモ一覧{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <h2 class="mb-3">
+        <i class="bi bi-people-fill me-2 text-primary"></i> 担当学年 共有メモ一覧
+    </h2>
+    <p class="text-muted">
+        あなたの担当学年（{{ request.user.grade }}年生）の全生徒に関する教師のメモが、重要度と新しい順に表示されています。
+    </p>
+
+    {# --- フィルタリングフォーム --- #}
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label d-block mb-1 fw-bold">重要度で絞り込み:</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="important" id="important-all" value="all"
+                        {% if selected_important == 'all' %}checked{% endif %}>
+                    <label class="btn btn-outline-secondary" for="important-all">全て</label>
+
+                    <input type="radio" class="btn-check" name="important" id="important-true" value="true"
+                        {% if selected_important == 'true' %}checked{% endif %}>
+                    <label class="btn btn-outline-danger" for="important-true">要会議のみ</label>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <label for="teacher-select" class="form-label mb-1 fw-bold">作成者で絞り込み (学年内):</label>
+                <select class="form-select" id="teacher-select" name="teacher_pk">
+                    <option value="" {% if not selected_teacher_pk %}selected{% endif %}>全ての先生</option>
+                    {% for teacher in teachers_in_grade %}
+                        <option value="{{ teacher.pk }}"
+                                {% if teacher.pk|slugify == selected_teacher_pk|slugify %}selected{% endif %}>
+                            {{ teacher.full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i> 絞り込みを適用
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# --- フィルター表示 --- #}
+    <div class="mb-4">
+        <h5 class="d-inline-block me-3 text-secondary fw-bold">
+            <i class="bi bi-funnel-fill me-2"></i> 適用中のフィルター:
+        </h5>
+        {% if selected_important == 'true' %}
+            <span class="badge bg-danger fs-6 me-2 p-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> 要会議のみ
+            </span>
+        {% else %}
+            <span class="badge bg-secondary fs-6 me-2 p-2">
+                <i class="bi bi-list-check me-1"></i> 全ての重要度
+            </span>
+        {% endif %}
+        
+        {# 💡 修正箇所: selected_teacher_obj を使用して先生の名前を表示 #}
+        {% if selected_teacher_obj %} 
+            <span class="badge bg-info text-dark fs-6 p-2">
+                <i class="bi bi-person-fill me-1"></i> {{ selected_teacher_obj.full_name }} のメモ
+            </span>
+        {% else %}
+            <span class="badge bg-secondary fs-6 p-2">
+                <i class="bi bi-people me-1"></i> 全作成者 ({% if teachers_in_grade %}{{ teachers_in_grade|length }}名{% else %}データなし{% endif %})
+            </span>
+        {% endif %}
+    </div>
+
+    {# --- メモ一覧 --- #}
+    {% if object_list %}
+        <div class="list-group">
+            {% for obj in object_list %}
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start 
+                             {% if obj.is_important %}list-group-item-danger border-start border-danger border-5{% else %}list-group-item-light{% endif %}">
+                    
+                    <div class="flex-grow-1 me-3">
+                        <div class="d-flex align-items-center mb-1">
+                            {% if obj.is_important %}
+                                <span class="badge bg-danger me-2"><i class="bi bi-exclamation-triangle-fill"></i> 要会議</span>
+                            {% endif %}
+                            <h5 class="mb-0">
+                                <strong class="text-primary">{{ obj.student.full_name }}</strong>
+                                <span class="badge bg-secondary ms-2">
+                                    {{ obj.student.classroom.grade }}年 {{ obj.student.classroom.name }}組
+                                </span>
+                            </h5>
+                        </div>
+
+                        {# メモ本文のプレビュー #}
+                        <p class="mb-1 mt-2 text-dark">
+                            {{ obj.text|truncatechars:100|linebreaksbr }}
+                        </p>
+                        <small class="text-muted">
+                            作成者: **{{ obj.teacher.full_name }}** ({{ obj.created_at|date:'Y/m/d H:i' }})
+                        </small>
+                    </div>
+
+                    {# --- 詳細ボタンのみ --- #}
+                    <div class="ms-3 flex-shrink-0">
+                        <a href="{% url 'notebook:head_teacher_log_detail' obj.pk %}" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="bi bi-info-circle"></i> 詳細
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {# --- ページネーション (ListView使用時) --- #}
+        {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&important={{ selected_important|urlencode }}&teacher_pk={{ selected_teacher_pk|urlencode }}"><i class="bi bi-chevron-left"></i> 前へ</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link">ページ {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&important={{ selected_important|urlencode }}&teacher_pk={{ selected_teacher_pk|urlencode }}">次へ <i class="bi bi-chevron-right"></i></a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="alert alert-info text-center mt-4">
+            <i class="bi bi-info-circle me-1"></i> 現在、適用中のフィルター条件に該当する教師メモはありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

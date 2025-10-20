@@ -6,14 +6,16 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = (
-            'username', 'full_name', 'role', 'email', 'grade', 'classroom', 'full_name', 'gender')
+            'username', 'full_name', 'role', 'email', 'grade', 'head_of_grade', 'classroom', 'student_id', 'gender')
         labels = {
             'username': 'ユーザー名',
             'full_name': '氏名',
             'role': '所属',
             'email': 'メールアドレス',
             'grade': '学年',
+            'head_of_grade': '主任学年',
             'classroom': 'クラス',
+            'student_id': '生徒番号',
             'gender': '性別',
         }
     
@@ -26,13 +28,14 @@ class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
         fields = (
-            'username', 'full_name', 'role', 'email', 'grade', 'classroom', 'student_id', 'gender')
+            'username', 'full_name', 'role', 'email', 'grade', 'head_of_grade', 'classroom', 'student_id', 'gender')
         labels = {
             'username': 'ユーザー名',
             'full_name': '氏名',
             'role': '所属',
             'email': 'メールアドレス',
             'grade': '学年',
+            'head_of_grade': '主任学年',
             'classroom': 'クラス',
             'student_id': '生徒番号',
             'gender': '性別',

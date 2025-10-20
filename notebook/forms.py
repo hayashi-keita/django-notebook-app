@@ -41,19 +41,19 @@ class DailyRecordForm(forms.ModelForm):
 class GradeForm(forms.ModelForm):
     class Meta:
         model = Grade
-        fields = ['name']
-        labels = {'name': '学年名'}
+        fields = ['number', 'name']
+        labels = {'number': '学年No', 'name': '学年名'}
 
 class ClassroomForm(forms.ModelForm):
     class Meta:
         model = Classroom
-        fields = ['name']
-        labels = {'name': 'クラス名'}
+        fields = ['grade', 'name']
+        labels = {'grade': '学年', 'name': 'クラス名'}
 
 class MemoForm(forms.ModelForm):
     
     class Meta:
-        model = Memo
+        model = Memo 
         fields = ['text', 'stamp']
         widgets = {
             'text': forms.Textarea(attrs={

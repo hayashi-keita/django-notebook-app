@@ -20,15 +20,28 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentAndAdminMixin, CreateView
     template_name = 'notebook/record_form.html'
     success_url = reverse_lazy('notebook:student_record_list')
 
+    def get_default_schoolday(self):
+        today = date.today()
+        weekday = today.weekday()
+
+        if weekday == 0:
+            default_date = today - timedelta(days=3)
+        elif weekday == 6:
+            default_date = today - timedelta(days=2)
+        elif weekday == 5:
+            default_date = today - timedelta(days=1)
+        else:
+            default_date =today - timedelta(days=1)
+        return default_date
+
     def get_initial(self):
         # 初期値記録日を設定
-        default_date = date.today() - timedelta(days=1)
-        return {'date_for': default_date}
+        return {'date_for': self.get_default_schoolday()}
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # テンプレートにデフォルトの日付を渡すが、ユーザーはフォームで変更可能
-        context['default_record_date'] = date.today() - timedelta(days=1)
+        context['default_record_date'] = self.get_default_schoolday()
         return context
     
     def form_valid(self, form):

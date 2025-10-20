@@ -6,7 +6,7 @@
 {% block contents %}
 <div class="container mt-4">
     <h1 class="mb-4">生徒の評価推移グラフ (先生用)</h1>
-    
+
     <!-- フィルタリングUI -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -16,32 +16,21 @@
                 <div class="col-md-3">
                     <label for="filter_type" class="form-label">フィルタ対象</label>
                     <select id="filter_type" class="form-select">
-                        <option value="all" {% if filter_params.filter == 'all' %}selected{% endif %}>クラス全体平均</option>
+                        <option value="all" {% if filter_params.filter == 'all' or not filter_params.filter %}selected{% endif %}>クラス全体平均</option>
                         <option value="grade" {% if filter_params.filter == 'grade' %}selected{% endif %}>学年別平均</option>
                         <option value="student" {% if filter_params.filter == 'student' %}selected{% endif %}>生徒個人</option>
                     </select>
                 </div>
 
-                <!-- フィルタ値選択 (学年/生徒) -->
+                <!-- 対象値選択 -->
                 <div class="col-md-5">
                     <label for="filter_value" class="form-label">対象選択</label>
-                    <select id="filter_value" class="form-select" disabled>
-                        {# テンプレート側で値をセットするためのデータはJSで渡されるため、ここでは現在の選択肢のみを表示 #}
-                        {% if filter_params.filter == 'grade' %}
-                            {% for grade in available_grades %}
-                                <option value="{{ grade }}" {% if filter_params.value|slugify == grade|slugify %}selected{% endif %}>{{ grade }}年生</option>
-                            {% endfor %}
-                        {% elif filter_params.filter == 'student' %}
-                            {% for student in available_students %}
-                                <option value="{{ student.pk }}" {% if filter_params.value|slugify == student.pk|slugify %}selected{% endif %}>{{ student.name }}</option>
-                            {% endfor %}
-                        {% else %}
-                            <option value="">フィルタリングなし</option>
-                        {% endif %}
+                    <select id="filter_value" class="form-select">
+                        <option value="">選択してください</option>
                     </select>
                 </div>
 
-                <!-- 適用ボタン -->
+                <!-- ボタン -->
                 <div class="col-md-4 d-flex justify-content-end">
                     <button class="btn btn-primary me-2" onclick="applyFilter()">
                         <i class="fas fa-filter"></i> 適用
@@ -51,14 +40,15 @@
                     </button>
                 </div>
             </div>
+            <div id="filter-error-message" class="mt-2"></div>
         </div>
     </div>
-    
-    <!-- グラフ描画エリア -->
+
+    <!-- グラフ描画 -->
     <h2 class="h5 mb-3">{{ current_filter_label }} の評価推移</h2>
     {% if total_records > 0 %}
         <p class="alert alert-info">
-            <strong>比較ベンチマーク:</strong> {% if filter_params.filter != 'student' %}破線は**{{ compare_label }}**を示します。{% else %}グラフには{{ compare_label }}との比較が表示されます。{% endif %}
+            <strong>比較ベンチマーク:</strong> {% if filter_params.filter != 'student' %}破線は<strong>{{ compare_label }}</strong>を示します。{% else %}グラフには{{ compare_label }}との比較が表示されます。{% endif %}
         </p>
         <div class="card shadow-sm mb-4">
             <div class="card-body">
@@ -69,7 +59,7 @@
         </div>
     {% else %}
         <div class="alert alert-warning text-center">
-            <i class="fas fa-exclamation-triangle"></i> 該当するレコードがありません。フィルタ条件を変更してください。
+            <i class="fas fa-exclamation-triangle"></i> 該当データがありません。フィルタ条件を変更してください。
         </div>
     {% endif %}
 
@@ -79,221 +69,154 @@
         </a>
     </div>
 
-    {# JSONデータを取得するために、|safeフィルターを使用する（ユーザー報告に基づいて） #}
-    {# 🚨 この方法はセキュリティリスクがあるため、本来はjson_scriptを推奨しますが、動作を優先します #}
-    <input type="hidden" id="dates-json" value='{{ dates_json | default:"[]" | safe }}'>
-    <input type="hidden" id="datasets-json" value='{{ datasets_json | default:"[]" | safe }}'>
-    <input type="hidden" id="filter-params-json" value='{{ filter_params | default:"{}" | safe }}'>
-    <input type="hidden" id="available-grades-json" value='{{ available_grades | default:"[]" | safe }}'>
-    <input type="hidden" id="available-students-json" value='{{ available_students | default:"[]" | safe }}'>
-
+    <!-- JSONデータ -->
+    <input type="hidden" id="dates-json" value='{{ dates_json|default:"[]"|safe }}'>
+    <input type="hidden" id="datasets-json" value='{{ datasets_json|default:"[]"|safe }}'>
+    <input type="hidden" id="filter-params-json" value='{{ filter_params|default:"{}"|safe }}'>
+    <input type="hidden" id="available-grades-json" value='{{ available_grades|default:"[]"|safe }}'>
+    <input type="hidden" id="available-students-json" value='{{ available_students|default:"[]"|safe }}'>
 </div>
 {% endblock %}
 
 {% block script %}
-<!-- Font Awesome CDN for icons ( assuming it's used in base.html) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<!-- Chart.js CDN (グラフ描画ライブラリ) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
 <script>
-    // --- JSONデータを安全に取得 (hidden input fieldsから) ---
-    // 💡 ユーザー報告の通り、JSON文字列をパースする方式に戻します。
-    // 値が空の場合に備えてdefault:"[]"またはdefault:"{}"を適用します。
-    
-    function safeParse(id, fallback) {
-        const element = document.getElementById(id);
-        if (!element) return fallback;
-        try {
-            // hidden input fieldから値を取得し、JSONとしてパース
-            return JSON.parse(element.value);
-        } catch (e) {
-            console.error(`Error parsing JSON for ${id}:`, e);
-            return fallback;
-        }
+// ------------------ 安全にJSONをパース ------------------
+function safeParse(id, fallback) {
+    try {
+        return JSON.parse(document.getElementById(id)?.value || '');
+    } catch {
+        return fallback;
+    }
+}
+
+// ------------------ 初期データ取得 ------------------
+const dates = safeParse('dates-json', []);
+const datasets = safeParse('datasets-json', []);
+const filterParams = safeParse('filter-params-json', {});  // ← Djangoから渡される値
+const availableGrades = safeParse('available-grades-json', []);
+const availableStudents = safeParse('available-students-json', []);
+const yAxisLabel = "{{ yAxisLabel }}";
+const totalRecords = {{ total_records|default:0 }};
+
+// ------------------ UI要素 ------------------
+let filterTypeSelect, filterValueSelect;
+
+// ------------------ エラー表示 ------------------
+function showError(msg) {
+    const box = document.getElementById('filter-error-message');
+    box.innerHTML = `<div class="alert alert-danger">${msg}</div>`;
+    setTimeout(() => box.innerHTML = '', 2500);
+}
+
+// ------------------ フィルター候補を更新 ------------------
+function updateFilterValueOptions() {
+    if (!filterTypeSelect || !filterValueSelect) return;
+
+    const type = filterTypeSelect.value;
+    const currentValue = filterParams.value || '';
+
+    filterValueSelect.innerHTML = '';
+
+    if (type === 'all') {
+        filterValueSelect.disabled = true;
+        filterValueSelect.innerHTML = '<option value="">クラス全体平均</option>';
+        return;
     }
 
-    const dates = safeParse('dates-json', []);
-    const datasets = safeParse('datasets-json', []);
-    const filterParams = safeParse('filter-params-json', {});
-    const availableGrades = safeParse('available-grades-json', []);
-    const availableStudents = safeParse('available-students-json', []);
-    
-    // その他の非JSONデータはそのまま
-    const yAxisLabel = "{{ yAxisLabel }}";
-    const totalRecords = {{ total_records }};
+    filterValueSelect.disabled = false;
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = '選択してください';
+    filterValueSelect.appendChild(defaultOpt);
 
-    // フィルタリングUIの要素を格納する変数 (DOMContentLoaded後にセット)
-    let filterTypeSelect = null;
-    let filterValueSelect = null;
-    
-    
-    // --- フィルタリングロジック ---
-    
-    function updateFilterValueOptions() {
-        // 要素が存在するか確認
-        if (!filterTypeSelect || !filterValueSelect) {
-            console.warn("Filter UI elements not found.");
-            return;
-        }
-
-        const type = filterTypeSelect.value;
-        filterValueSelect.innerHTML = ''; // オプションをクリア
-        
-        if (type === 'all') {
-            filterValueSelect.setAttribute('disabled', 'true');
-            filterValueSelect.innerHTML = '<option value="">全クラス平均</option>';
-            return;
-        }
-
-        filterValueSelect.removeAttribute('disabled');
-        
-        if (type === 'grade') {
-            if (availableGrades.length === 0) {
-                filterValueSelect.innerHTML = '<option value="" disabled>学年データなし</option>';
-            }
-            availableGrades.forEach(grade => {
-                const option = document.createElement('option');
-                option.value = grade;
-                option.textContent = `${grade}年生`;
-                if (filterParams.filter === 'grade' && String(filterParams.value) === String(grade)) {
-                    option.selected = true;
-                }
-                filterValueSelect.appendChild(option);
-            });
-        } else if (type === 'student') {
-            if (availableStudents.length === 0) {
-                filterValueSelect.innerHTML = '<option value="" disabled>生徒データなし</option>';
-            }
-            availableStudents.forEach(student => {
-                const option = document.createElement('option');
-                option.value = student.pk;
-                option.textContent = student.name;
-                if (filterParams.filter === 'student' && String(filterParams.value) === String(student.pk)) {
-                    option.selected = true;
-                }
-                filterValueSelect.appendChild(option);
-            });
-        }
+    if (type === 'grade') {
+        availableGrades.forEach(grade => {
+            const opt = document.createElement('option');
+            opt.value = String(grade);
+            opt.textContent = `${grade}年生`;
+            if (String(currentValue) === String(grade)) opt.selected = true;
+            filterValueSelect.appendChild(opt);
+        });
+    } else if (type === 'student') {
+        availableStudents.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = String(s.pk);
+            opt.textContent = s.name;
+            if (String(currentValue) === String(s.pk)) opt.selected = true;
+            filterValueSelect.appendChild(opt);
+        });
     }
-    
-    // フィルタ適用処理
-    function applyFilter() {
-        if (!filterTypeSelect || !filterValueSelect) return;
-        
-        const filterSelect = filterTypeSelect.value;
-        const valueSelect = filterValueSelect;
-        let url = new URL(window.location.href);
-        
-        // フィルタタイプを設定
-        url.searchParams.set('filter', filterSelect);
+}
 
-        if (filterSelect === 'grade' || filterSelect === 'student') {
-            // 値を選択しているか確認
-            if (valueSelect.value) {
-                url.searchParams.set('value', valueSelect.value);
-                window.location.href = url.toString();
-            } else {
-                // アラートの代わりにカスタムUIを使用することが推奨されます
-                console.error('フィルタリング対象を選択してください。');
-                // 仮のメッセージ表示
-                const message = document.createElement('div');
-                message.className = 'alert alert-danger mt-3';
-                message.textContent = 'フィルタリング対象を選択してください。';
-                document.querySelector('.card-body').appendChild(message);
-                setTimeout(() => message.remove(), 3000);
-            }
-        } else {
-            // 'all' の場合、valueパラメータを削除して適用
-            url.searchParams.delete('value');
-            window.location.href = url.toString();
-        }
+// ------------------ 適用ボタン ------------------
+function applyFilter() {
+    const type = filterTypeSelect.value;
+    const val = filterValueSelect.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('filter', type);
+
+    if (type !== 'all') {
+        if (!val) return showError('対象を選択してください。');
+        url.searchParams.set('value', val);
+    } else {
+        url.searchParams.delete('value');
     }
 
-    // フィルタ解除処理
-    function resetFilter() {
-        window.location.href = window.location.pathname; // フィルタなしで再読み込み
-    }
+    // 現在の選択をlocalStorageに保存しておく
+    localStorage.setItem('teacherFilterType', type);
+    localStorage.setItem('teacherFilterValue', val);
 
-    // 初期化 (DOMの読み込み完了を待つ)
-    document.addEventListener('DOMContentLoaded', () => {
-        // DOMContentLoaded内で要素を取得し、グローバル変数に代入
-        filterTypeSelect = document.getElementById('filter_type');
-        filterValueSelect = document.getElementById('filter_value');
-        
-        if (filterTypeSelect && filterValueSelect) {
-            updateFilterValueOptions(); // 初期状態でドロップダウンを更新
-            filterTypeSelect.addEventListener('change', updateFilterValueOptions);
-        }
-    });
+    window.location.href = url.toString();
+}
 
-    // --- Chart.js 描画ロジック ---
-    if (totalRecords > 0 && datasets.length > 0) {
-        // チャート要素の存在確認
-        const chartElement = document.getElementById('recordChart');
-        
-        if (chartElement) {
-            const ctx = chartElement.getContext('2d');
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates, // X軸: 日付
-                    datasets: datasets // ビュー側で完全に構築されたデータセット配列
+// ------------------ リセットボタン ------------------
+function resetFilter() {
+    localStorage.removeItem('teacherFilterType');
+    localStorage.removeItem('teacherFilterValue');
+    window.location.href = window.location.pathname;
+}
+
+// ------------------ ページ読み込み時 ------------------
+document.addEventListener('DOMContentLoaded', () => {
+    filterTypeSelect = document.getElementById('filter_type');
+    filterValueSelect = document.getElementById('filter_value');
+
+    // localStorageの値を優先的に反映
+    const savedType = localStorage.getItem('teacherFilterType');
+    const savedValue = localStorage.getItem('teacherFilterValue');
+    if (savedType) filterTypeSelect.value = savedType;
+    if (savedValue) filterParams.value = savedValue;
+
+    updateFilterValueOptions();
+    filterTypeSelect.addEventListener('change', updateFilterValueOptions);
+});
+
+// ------------------ グラフ描画 ------------------
+if (totalRecords > 0 && datasets.length > 0) {
+    const ctx = document.getElementById('recordChart')?.getContext('2d');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: dates, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '体調・メンタル評価推移', font: { size: 16 } },
+                    tooltip: { mode: 'index', intersect: false }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // コンテナのサイズに合わせて調整
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: '体調・メンタル 評価推移',
-                            font: { size: 16 }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                // 小数点以下の表示を制御
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        // filterParamsはJSオブジェクトになっている
-                                        label += context.parsed.y.toFixed(filterParams.filter === 'student' ? 0 : 2); // 個人の場合は整数、平均は小数点2桁
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: { 
-                                display: true,
-                                text: '日付'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: yAxisLabel // 動的なラベル (平均評価レベル / 評価レベル)
-                            },
-                            min: 1, // 最小値を1に固定
-                            max: 10, // 最大値を10に固定
-                            ticks: {
-                                stepSize: 1 // 1刻み
-                            }
-                        }
+                scales: {
+                    x: { title: { display: true, text: '日付' } },
+                    y: {
+                        title: { display: true, text: yAxisLabel },
+                        min: 1, max: 10, ticks: { stepSize: 1 }
                     }
                 }
-            });
-        }
-    } else {
-        // データがない場合のメッセージ表示を強化 (HTML側で表示されるため、ここでは主にコンソールログ)
-        console.log("No data or records to display the chart.");
+            }
+        });
     }
+}
 </script>
 {% endblock %}

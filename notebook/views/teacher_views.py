@@ -18,7 +18,21 @@ CustomUser = get_user_model()
 class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView):
     model = CustomUser
     template_name = 'notebook/teacher_record_list.html'
-    paginator_class = 30
+    paginate_by = 30
+
+    def get_default_schoolday(self):
+        today = date.today()
+        weekday = today.weekday()
+
+        if weekday == 0:
+            default_date = today - timedelta(days=3)
+        elif weekday == 6:
+            default_date = today - timedelta(days=2)
+        elif weekday == 5:
+            default_date = today - timedelta(days=1)
+        else:
+            default_date =today - timedelta(days=1)
+        return default_date
 
     
     def get_queryset(self):
@@ -32,10 +46,10 @@ class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListVi
             try:
                 date_for = date.fromisoformat(date_param)
             except ValueError:
-                # パラメータが無効ならデフォルト（昨日）に戻す
-                date_for = timezone.localdate() - timedelta(days=1)
+                # パラメータが無効ならデフォルトに戻す
+                date_for = self.get_default_schoolday()
         else:   # パラメータがない場合、デフォルトで「昨日」の記録日を選択
-            date_for = timezone.localdate() - timedelta(days=1)
+            date_for = self.get_default_schoolday()
         
         self.selectde_date = date_for
         # 担任クラスに所属し、ロールが生徒のユーザーを取得
@@ -357,7 +371,7 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
         request = self.request
         #フィルタリングパラメータの取得
         filter_type = request.GET.get('filter', 'all')
-        filter_value = request.GET.get('value')
+        filter_value = request.GET.get('value', '')
 
         current_classroom = request.user.classroom
         # 担当クラスが存在しない場合はデータを表示しない
