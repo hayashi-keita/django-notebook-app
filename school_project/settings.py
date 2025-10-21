@@ -93,7 +93,7 @@ else:
     DATABASES = {
         'default': dj_database_url.config(
             # Replase this value with your local database's connection string.
-            default='postgresql://postgres:postgres@localhost:5432/school_project',
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
             conn_max_age=600,
         )
     }
