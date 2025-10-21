@@ -10,7 +10,6 @@ h11==0.16.0
 packaging==25.0
 pillow==12.0.0
 psycopg2-binary==2.9.11
-pygraphviz==1.14
 SQLAlchemy==2.0.44
 sqlparse==0.5.3
 typing_extensions==4.15.0
