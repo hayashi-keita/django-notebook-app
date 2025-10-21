@@ -79,19 +79,21 @@ WSGI_APPLICATION = 'school_project.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
-if not DEBUG:
+else:
     DATABASES = {
         'default': dj_database_url.config(
             # Replase this value with your local database's connection string.
-            default='postgrespl://postgres:postgres@localhost:5432/school_project',
+            default='postgresql://postgres:postgres@localhost:5432/school_project',
             conn_max_age=600,
         )
     }
