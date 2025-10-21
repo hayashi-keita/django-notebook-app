@@ -6,7 +6,7 @@ CustomUser = get_user_model()
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        if not CustomUser.objects.filter(usermane='keita').exists():
+        if not CustomUser.objects.filter(username='keita').exists():
             CustomUser.objects.create_superuser(
                 username='keita',
                 email='',
