@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
+import os
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
@@ -27,7 +29,7 @@ SECRET_KEY = 'django-insecure-07#vc4dp#rwa*u5q5xv(b+*u3pl%euxkqhh_06&mkq*l6ttrq)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -84,6 +87,15 @@ DATABASES = {
     }
 }
 
+if not DEBUG:
+    DATABASES = {
+        'default': dj_database_url.config(
+            # Replase this value with your local database's connection string.
+            default='postgrespl://postgres:postgres@localhost:5432/school_project',
+            conn_max_age=600,
+        )
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -121,12 +133,16 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATCFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STRAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    STATCFILES_DIRS = [
+        BASE_DIR / 'static',
+    ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
