@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-07#vc4dp#rwa*u5q5xv(b+*u3pl%euxkqhh_06&mkq*l6ttrq)'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-for-local')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -153,4 +153,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'notebook:index'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-for-local')
