@@ -16,6 +16,7 @@
                 <tr>
                     <th>ID</th>
                     <th>クラス名</th>
+                    <th>学年</th>
                     <th>メンバー数</th>
                     <th>操作</th>
                 </tr>
@@ -25,6 +26,7 @@
                     <tr>
                         <td>{{ obj.pk }}</td>
                         <td>{{ obj.name }}</td>
+                        <td>{{ obj.grade.name }}</td>
                         {# related_name='members' を利用してユーザー数を表示 #}
                         <td><span class="badge bg-info">{{ obj.members.count }}</span></td> 
                         <td class="text-nowrap">
@@ -34,7 +36,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center text-muted py-4">クラスが登録されていません。</td>
+                        <td colspan="5" class="text-center text-muted py-4">クラスが登録されていません。</td>
                     </tr>
                 {% endfor %}
             </tbody>

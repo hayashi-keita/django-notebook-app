@@ -54,8 +54,8 @@
                                 <span class="badge bg-secondary">{{ obj.get_role_display }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ obj.grade|default:"-" }}</td>
-                        <td>{{ obj.classroom|default:"-" }}</td>
+                        <td>{{ obj.grade.name|default:"-" }}</td>
+                        <td>{{ obj.classroom.name|default:"-" }}</td>
                         
                         {# 💡 性別とメールは省略し、代わりに操作列に詳細ボタンを追加 #}
                         {# メールと性別は詳細画面で見れば十分な情報と判断 #}

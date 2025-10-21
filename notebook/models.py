@@ -21,7 +21,7 @@ class Classroom(models.Model):
         verbose_name='担任教師'
     )
     def __str__(self):
-        return f'{self.grade} {self.name}'
+        return f'{self.grade}年 {self.name}'
 
 class DailyRecord(models.Model):
     CONDITION_CHOICES = [(i, str(i)) for i in range(1, 11)]
