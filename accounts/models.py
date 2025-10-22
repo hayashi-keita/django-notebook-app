@@ -46,7 +46,7 @@ class CustomUser(AbstractUser):
 
     
     def __str__(self):
-        return f'{self.username} ({self.get_role_display()})'
+        return f'{self.username} - {self.full_name} ({self.get_role_display()})'
     
     @property
     def is_student(self):

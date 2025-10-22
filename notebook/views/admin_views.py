@@ -9,6 +9,9 @@ class GradeListView(AdminOnlyMixin, ListView):
     model = Grade
     template_name = 'notebook/grade_list.html'
 
+    def get_queryset(self):
+        return Grade.objects.order_by('pk')
+
 class GradeCreateView(AdminOnlyMixin, CreateView):
     model = Grade
     form_class = GradeForm
@@ -30,6 +33,9 @@ class GradeDeleteView(AdminOnlyMixin, DeleteView):
 class ClassroomListView(AdminOnlyMixin, ListView):
     model = Classroom
     template_name = 'notebook/classroom_list.html'
+
+    def get_queryset(self):
+        return Classroom.objects.order_by('pk')
 
 class ClassroomCreateView(AdminOnlyMixin, CreateView):
     model = Classroom
