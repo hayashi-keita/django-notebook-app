@@ -15,6 +15,7 @@ class Classroom(models.Model):
     homeroom_teacher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
+        limit_choices_to={'role': 'TEACHER'},
         blank=True,
         null=True,
         related_name='homeroom_classes',

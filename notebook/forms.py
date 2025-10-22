@@ -43,12 +43,21 @@ class GradeForm(forms.ModelForm):
         model = Grade
         fields = ['number', 'name']
         labels = {'number': '学年No', 'name': '学年名'}
+        widgets = {
+            'number': forms.NumberInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 
 class ClassroomForm(forms.ModelForm):
     class Meta:
         model = Classroom
-        fields = ['grade', 'name']
-        labels = {'grade': '学年', 'name': 'クラス名'}
+        fields = ['grade', 'name', 'homeroom_teacher']
+        labels = {'grade': '学年', 'name': 'クラス名', 'homeroom_teacher': '担任'}
+        widgets = {
+            'grade': forms.Select(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'homeroom_teacher': forms.Select(attrs={'class': 'form-control'}),
+        }
 
 class MemoForm(forms.ModelForm):
     
