@@ -33,17 +33,6 @@
                             <option value="ADMIN" {% if request.GET.role == 'ADMIN' %}selected{% endif %}>管理者</option>
                         </select>
                     </div>
-                    
-                    <!-- 学年フィルター -->
-                    <div class="col-md-3 col-lg-2">
-                        <label for="grade-filter" class="form-label small fw-bold">学年</label>
-                        <select id="grade-filter" name="grade" class="form-select form-select-sm">
-                            <option value="">全ての学年</option>
-                            {% for g in grades %}
-                                <option value="{{ g.pk }}" {% if request.GET.grade|default:'' == g.pk|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
 
                     <!-- ボタン群 -->
                     <div class="col-md-12 col-lg-4 d-flex">
