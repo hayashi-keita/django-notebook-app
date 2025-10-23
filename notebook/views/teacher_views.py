@@ -51,7 +51,7 @@ class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListVi
         else:   # パラメータがない場合、デフォルトで「昨日」の記録日を選択
             date_for = self.get_default_schoolday()
         
-        self.selectde_date = date_for
+        self.selected_date = date_for
         # 担任クラスに所属し、ロールが生徒のユーザーを取得
         queryset = CustomUser.objects.filter(
             classroom__in=homeroom_classes,
@@ -59,7 +59,7 @@ class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListVi
         ).order_by('student_id')
         # 選択された日付のレコードを取得するクエリ
         records_for_date = DailyRecord.objects.filter(
-            date_for=self.selectde_date,
+            date_for=self.selected_date,
         ).select_related('read_by')
         # Prefetchを使って、生徒リストにその日の記録を紐づける
         queryset = queryset.prefetch_related(
@@ -69,17 +69,17 @@ class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListVi
         status_param = self.request.GET.get('status')
         if status_param == 'submitted':
             # 提出済の生徒のみ
-            queryset = queryset.filter(daily_records__date_for=self.selectde_date)
+            queryset = queryset.filter(daily_records__date_for=self.selected_date)
         elif status_param == 'unsubmitted':
             # 未提出の生徒のみ
-            queryset = queryset.exclude(daily_records__date_for=self.selectde_date)
+            queryset = queryset.exclude(daily_records__date_for=self.selected_date)
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # テンプレートに渡すデータ
-        context['selected_date'] = self.selectde_date
-        context['date_filter_value'] = self.selectde_date.isoformat()
+        context['selected_date'] = self.selected_date
+        context['date_filter_value'] = self.selected_date.isoformat()
         context['selected_status'] = self.request.GET.get('status', 'all')
         # 通知処理
         homeroom_classes = self.request.user.homeroom_classes.all()
@@ -89,7 +89,7 @@ class TeacherRecordListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListVi
         ).values_list('pk', flat=True)
         unread_record_count = DailyRecord.objects.filter(
             student__pk__in=relevant_student_pks,
-            date_for=self.selectde_date,
+            date_for=self.selected_date,
             is_read=False,
         ).count()
         context['unread_record_count'] = unread_record_count
@@ -291,7 +291,7 @@ class TeacherLogListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView)
         context = super().get_context_data(**kwargs)
         # テンプレートで選択状態を維持するためにGETパラメータを渡す
         context['selected_important'] = self.request.GET.get('important', 'all')
-        context['selected_teacher_pk'] = self.request.GET.get('teacher_pk')
+        context['selected_teacher_pk'] = self.request.GET.get('teacher_pk', '')
         # 作成者フィルター用のオプションリスト (同じ学年の先生)
         current_grade = self.request.user.grade
         teachers_in_grade = CustomUser.objects.none()

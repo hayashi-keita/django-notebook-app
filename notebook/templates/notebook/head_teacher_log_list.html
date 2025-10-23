@@ -18,7 +18,7 @@
                 <label class="form-label d-block mb-1 fw-bold">重要度で絞り込み:</label>
                 <div class="btn-group w-100" role="group">
                     <input type="radio" class="btn-check" name="important" id="important-all" value="all"
-                        {% if selected_important == 'all' %}checked{% endif %}>
+                        {% if selected_important == 'all' or not selected_important %}checked{% endif %}>
                     <label class="btn btn-outline-secondary" for="important-all">全て</label>
 
                     <input type="radio" class="btn-check" name="important" id="important-true" value="true"
@@ -33,7 +33,7 @@
                     <option value="" {% if not selected_teacher_pk %}selected{% endif %}>全ての先生</option>
                     {% for teacher in teachers_in_grade %}
                         <option value="{{ teacher.pk }}"
-                                {% if teacher.pk|slugify == selected_teacher_pk|slugify %}selected{% endif %}>
+                                {% if teacher.pk|stringformat:"s" == selected_teacher_pk %}selected{% endif %}>
                             {{ teacher.full_name }}
                         </option>
                     {% endfor %}
@@ -63,7 +63,6 @@
             </span>
         {% endif %}
         
-        {# 💡 修正箇所: selected_teacher_obj を使用して先生の名前を表示 #}
         {% if selected_teacher_obj %} 
             <span class="badge bg-info text-dark fs-6 p-2">
                 <i class="bi bi-person-fill me-1"></i> {{ selected_teacher_obj.full_name }} のメモ
@@ -116,25 +115,45 @@
 
         {# --- ページネーション (ListView使用時) --- #}
         {% if is_paginated %}
-            <nav class="mt-4">
+            {# フィルタリングパラメータを再利用するためのクエリ文字列を構築 #}
+            {# 'add'フィルターは標準的なテンプレートフィルターではないため、より安全な連結方法を使用します #}
+            {% with filter_query='&important='|add:selected_important|urlencode|add:'&teacher_pk='|add:selected_teacher_pk|urlencode %}
+            <nav class="mt-4" aria-label="ページナビゲーション">
                 <ul class="pagination justify-content-center">
+                    
+                    {# 前へリンク #}
                     {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&important={{ selected_important|urlencode }}&teacher_pk={{ selected_teacher_pk|urlencode }}"><i class="bi bi-chevron-left"></i> 前へ</a>
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ filter_query }}" aria-label="前へ"><i class="bi bi-chevron-left"></i> 前へ</a>
                         </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> 前へ</span></li>
                     {% endif %}
                     
-                    <li class="page-item disabled">
-                        <span class="page-link">ページ {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-                    </li>
+                    {# ページ番号のループを追加: 全てのページ番号をフィルタリングを維持したまま表示します #}
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{{ filter_query }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
 
+                    {# 次へリンク #}
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&important={{ selected_important|urlencode }}&teacher_pk={{ selected_teacher_pk|urlencode }}">次へ <i class="bi bi-chevron-right"></i></a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ filter_query }}" aria-label="次へ">次へ <i class="bi bi-chevron-right"></i></a>
                         </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">次へ <i class="bi bi-chevron-right"></i></span></li>
                     {% endif %}
                 </ul>
             </nav>
+            {% endwith %}
         {% endif %}
 
     {% else %}

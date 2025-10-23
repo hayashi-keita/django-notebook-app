@@ -22,8 +22,8 @@
                     <div class="col-md-3">
                         <label for="date-filter" class="form-label small fw-bold">日付を選択</label>
                         <input type="date" id="date-filter" name="date" 
-                               class="form-control form-control-sm"
-                               value="{{ date_filter_value }}">
+                                class="form-control form-control-sm"
+                                value="{{ date_filter_value }}">
                     </div>
 
                     {# --- 1. クラス名フィルタ --- #}
@@ -101,7 +101,7 @@
                                     </td>
                                     <td class="text-center">
                                         <a href="{% url 'notebook:head_teacher_record_detail' pk=obj.pk %}" 
-                                           class="btn btn-outline-info btn-sm">
+                                            class="btn btn-outline-info btn-sm">
                                             <i class="bi bi-eye"></i> 詳細
                                         </a>
                                     </td>
@@ -123,10 +123,14 @@
         {% if is_paginated %}
         <nav aria-label="ページネーション" class="mt-4">
             <ul class="pagination justify-content-center shadow-sm">
+                
+                {# {% with %} ブロックで、繰り返し使うフィルタリング済みのクエリパラメータ変数を定義 #}
+                {% with date_q=date_filter_value|urlencode classroom_q=current_classroom|urlencode unread_q=current_unread|lower|urlencode %}
+                
                 {% if page_obj.has_previous %}
                     <li class="page-item">
                         <a class="page-link" 
-                           href="?page={{ page_obj.previous_page_number }}&date={{ date_filter_value }}&classroom={{ current_classroom }}&unread={{ current_unread|lower }}" 
+                           href="?page={{ page_obj.previous_page_number }}&date={{ date_q }}&classroom={{ classroom_q }}&unread={{ unread_q }}" 
                            aria-label="前へ">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
@@ -141,7 +145,7 @@
                     {% else %}
                         <li class="page-item">
                             <a class="page-link" 
-                               href="?page={{ i }}&date={{ date_filter_value }}&classroom={{ current_classroom }}&unread={{ current_unread|lower }}">
+                               href="?page={{ i }}&date={{ date_q }}&classroom={{ classroom_q }}&unread={{ unread_q }}">
                                 {{ i }}
                             </a>
                         </li>
@@ -151,7 +155,7 @@
                 {% if page_obj.has_next %}
                     <li class="page-item">
                         <a class="page-link" 
-                           href="?page={{ page_obj.next_page_number }}&date={{ date_filter_value }}&classroom={{ current_classroom }}&unread={{ current_unread|lower }}" 
+                           href="?page={{ page_obj.next_page_number }}&date={{ date_q }}&classroom={{ classroom_q }}&unread={{ unread_q }}" 
                            aria-label="次へ">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
@@ -159,6 +163,9 @@
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
                 {% endif %}
+
+                {% endwith %}
+                
             </ul>
         </nav>
         {% endif %}

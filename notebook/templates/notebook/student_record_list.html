@@ -141,38 +141,38 @@
             <div class="card-footer bg-white pt-3">
                 <nav aria-label="ページネーション">
                     <ul class="pagination justify-content-center shadow-sm">
-                        {% comment %} URLに現在のフィルタパラメータを保持する {% endcomment %}
-                        {% with current_filters="&start_date="|add:start_date_filter_value|add:"&end_date="|add:end_date_filter_value|add:"&read_status="|add:selected_read_status %}
-                            {% if page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ current_filters }}" aria-label="前へ">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
-                                </li>
-                            {% else %}
-                                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-                            {% endif %}
+                        {% comment %} フィルタパラメータはビューで生成された current_filters_query を使用して保持します {% endcomment %}
+                        
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ current_filters_query }}" aria-label="前へ">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                        {% endif %}
 
-                            {% for i in paginator.page_range %}
-                                {% if page_obj.number == i %}
-                                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                                {% else %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ i }}{{ current_filters }}">{{ i }}</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ current_filters }}" aria-label="次へ">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
+                        {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
                             {% else %}
-                                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{{ current_filters_query }}">{{ i }}</a>
+                                </li>
                             {% endif %}
-                        {% endwith %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ current_filters_query }}" aria-label="次へ">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                        {% endif %}
+                        
                     </ul>
                 </nav>
             </div>

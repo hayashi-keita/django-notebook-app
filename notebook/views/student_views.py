@@ -119,7 +119,17 @@ class StudentRecordListView(LoginRequiredMixin, StudentAndAdminMixin, ListView):
         context['unread_record_count'] = DailyRecord.objects.filter(
             student=self.request.user,
             is_read=False,
-        ).count()    
+        ).count()
+
+        query_params = self.request.GET.copy()
+        if 'page' in query_params:
+            del query_params['page']
+        
+        if query_params:
+            context['current_filters_query'] = f'&{query_params.urlencode()}'
+        else:
+            context['current_filters_query'] = ''
+        
         return context
 
 class StudentRecordDetailView(LoginRequiredMixin, StudentAndAdminMixin, DetailView):

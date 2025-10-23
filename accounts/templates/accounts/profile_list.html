@@ -28,10 +28,10 @@
                         <label for="role-filter" class="form-label small fw-bold">役割</label>
                         <select id="role-filter" name="role" class="form-select form-select-sm">
                             <option value="">全ての役割</option>
-                            <option value="STUDENT" {% if request.GET.role == 'STUDENT' %}selected{% endif %}>生徒</option>
-                            <option value="TEACHER" {% if request.GET.role == 'TEACHER' %}selected{% endif %}>先生</option>
-                            <option value="HEAD_TEACHER" {% if request.GET.role == 'HEAD_TEACHER' %}selected{% endif %}>学年主任</option>
-                            <option value="ADMIN" {% if request.GET.role == 'ADMIN' %}selected{% endif %}>管理者</option>
+                            <option value="STUDENT" {% if request.GET.role|default:'' == 'STUDENT' %}selected{% endif %}>生徒</option>
+                            <option value="TEACHER" {% if request.GET.role|default:'' == 'TEACHER' %}selected{% endif %}>先生</option>
+                            <option value="HEAD_TEACHER" {% if request.GET.role|default:'' == 'HEAD_TEACHER' %}selected{% endif %}>学年主任</option>
+                            <option value="ADMIN" {% if request.GET.role|default:'' == 'ADMIN' %}selected{% endif %}>管理者</option>
                         </select>
                     </div>
                     
@@ -137,39 +137,40 @@
         {% if is_paginated %}
         <nav aria-label="ページネーション" class="mt-4">
             <ul class="pagination justify-content-center shadow-sm">
-                <!-- ページネーションリンクに全てのフィルターパラメータを保持させる -->
-                {% with current_params='q='|add:q|add:'&role='|add:request.GET.role|add:'&grade='|add:request.GET.grade %}
-                
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}" aria-label="前へ">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-                    {% endif %}
-
-                    {% for i in paginator.page_range %}
-                        {% if page_obj.number == i %}
-                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                        {% else %}
+               {% with q_safe=q|default:'' role_safe=role|default:'' grade_safe=grade|default:'' %}
+                    {% with current_params='q='|add:q_safe|add:'&role='|add:role_safe|add:'&grade='|add:grade_safe %}
+                    
+                        {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}&{{ current_params }}">{{ i }}</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}" aria-label="前へ">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
                             </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
                         {% endif %}
-                    {% endfor %}
 
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ current_params }}" aria-label="次へ">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-                    {% endif %}
-                
+                        {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}&{{ current_params }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ current_params }}" aria-label="次へ">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                        {% endif %}
+                    
+                    {% endwith %}
                 {% endwith %}
             </ul>
         </nav>

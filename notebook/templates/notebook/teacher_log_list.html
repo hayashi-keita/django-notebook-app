@@ -117,6 +117,49 @@
                 </div>
             {% endfor %}
         </div>
+
+        {# --- ページネーション (ListView使用時) --- #}
+        {% if is_paginated %}
+            {# request.GET.urlencodeでフィルタリングパラメータを保持し、|cutで既存のpageを削除してから新しいページ番号を付与します。 #}
+            {% with original_query=request.GET.urlencode|cut:'page='|cut:'&page=' %}
+            <nav class="mt-4" aria-label="ページナビゲーション">
+                <ul class="pagination justify-content-center">
+                    
+                    {# 前へリンク #}
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if original_query %}&{{ original_query }}{% endif %}" aria-label="前へ"><i class="bi bi-chevron-left"></i> 前へ</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> 前へ</span></li>
+                    {% endif %}
+                    
+                    {# ページ番号のループ #}
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% if original_query %}&{{ original_query }}{% endif %}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {# 次へリンク #}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if original_query %}&{{ original_query }}{% endif %}" aria-label="次へ">次へ <i class="bi bi-chevron-right"></i></a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">次へ <i class="bi bi-chevron-right"></i></span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endwith %}
+        {% endif %}
+
     {% else %}
         <div class="alert alert-info text-center mt-4">
             現在、該当する教師メモはありません。
