@@ -1,8 +1,10 @@
+from asyncio import QueueEmpty
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView, LoginView
 from .models import CustomUser
+from notebook.models import Grade
 from .forms import CustomUserChangeForm, CustomUserCreationForm, CustomPasswordChangeForm, CustomAuthenticationForm, UserSelfUpdateForm
 from .mixins import AdminOnlyMixin, TeacherAndAdminOnlyMixin, UserIsOwnerOrStaffMixin, UserIsOwnerOrAdminMixin
 from django.db.models import Q
@@ -28,13 +30,28 @@ class CustomUserListView(TeacherAndAdminOnlyMixin, ListView):
         q = self.request.GET.get('q')
         if q:
             queryset = queryset.filter(
-                Q(username__icontains=q) | Q(full_name__icontains=q) | Q(email__icontains=q)
+                Q(username__icontains=q) | Q(full_name__icontains=q)
             )
+        role = self.request.GET.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+        grade_pk_param = self.request.GET.get('grade')
+        if grade_pk_param:
+            try:
+                grade_pk = int(grade_pk_param)
+                queryset = queryset.filter(grade=grade_pk)
+            except ValueError:
+                pass
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context['grades'] = Grade.objects.all().order_by('pk')
         context['q'] = self.request.GET.get('q', '')
+        context['role'] = self.request.GET.get('role', '')
+        context['grade'] = self.request.GET.get('grade', '')
         return context
 
 class CustomUserDetailView(UserIsOwnerOrStaffMixin, DetailView):

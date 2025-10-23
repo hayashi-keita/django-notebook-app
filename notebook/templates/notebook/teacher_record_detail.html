@@ -6,39 +6,36 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
+
             <div class="mb-4 fs-4 fw-bold text-primary">
                 <i class="bi bi-calendar-check me-2"></i> 連絡帳 詳細（{{ object.date_for|date:'Y年m月d日'}}分）
             </div>
 
             <div class="card p-4 shadow">
-                <h4 class="card-title mb-3">
-                    <i class="bi bi-person-fill me-2"></i>
-                    {{ object.student.full_name }} さんの記録
+                <!-- 生徒情報 -->
+                <h4 class="card-title mb-2">
+                    <i class="bi bi-person-fill me-2"></i> {{ object.student.full_name }} さんの記録
                 </h4>
-                <p class="text-muted">所属： {{ object.student.classroom.grade }} {{ object.student.classroom.name }}</p>
+                <p class="text-muted mb-3">所属： {{ object.student.classroom.grade }} {{ object.student.classroom.name }}</p>
                 <hr>
-                
-                {# 💡 教師間共有メモへのリンク #}
+
+                <!-- 先生専用アクション -->
                 <div class="alert alert-warning p-3 mb-4">
-                    <h5 class="mb-3 text-dark"><i class="bi bi-journal-text me-2"></i> **先生専用アクション (教師間共有)**</h5>
-                    
+                    <h5 class="mb-3 text-dark"><i class="bi bi-journal-text me-2"></i> 先生専用アクション（教師間共有）</h5>
                     <a href="{% url 'notebook:teacher_log_create' student_pk=object.student.pk %}" 
-                        class="btn btn-danger w-100 mb-2">
-                        <i class="bi bi-pencil-square me-2"></i> **この生徒の**共有メモを新規作成
+                       class="btn btn-danger w-100 mb-2">
+                        <i class="bi bi-pencil-square me-2"></i> この生徒の共有メモを新規作成
                     </a>
-                    
-                    <a href="{% url 'notebook:teacher_log_list' %}" 
-                        class="btn btn-outline-secondary w-100">
+                    <a href="{% url 'notebook:teacher_log_list' %}" class="btn btn-outline-secondary w-100">
                         <i class="bi bi-list-columns-reverse me-2"></i> 学年全体の共有メモ一覧へ
                     </a>
                 </div>
-                
-                {# 記録内容の表示 #}
+
+                <!-- 提出内容 -->
                 <h5 class="mt-4 mb-3 text-secondary"><i class="bi bi-file-text me-2"></i> 生徒の提出内容</h5>
                 
-                {# 体調のレベルとメモを表示 #}
-                <div class="row mb-3 pb-2">
-                    <div class="col-sm-4 text-muted fw-bold">体調（10段階評価）：</div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold">体調（10段階）：</div>
                     <div class="col-sm-8 fw-bold">{{ object.physical_level }}</div>
                 </div>
                 <div class="row mb-3 border-bottom">
@@ -46,9 +43,8 @@
                     <div class="col-sm-8">{{ object.physical_condition|default:'(なし)' }}</div>
                 </div>
 
-                {# メンタルのレベルとメモを表示 #}
-                <div class="row mb-3 pb-2">
-                    <div class="col-sm-4 text-muted fw-bold">メンタル（10段階評価）：</div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold">メンタル（10段階）：</div>
                     <div class="col-sm-8 fw-bold">{{ object.mental_level }}</div>
                 </div>
                 <div class="row mb-3 border-bottom">
@@ -61,17 +57,23 @@
                     <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr }}</div>
                 </div>
 
-                {# 添付ファイル表示 #}
+                <!-- 添付ファイル・リンク -->
                 {% if object.attachments.all %}
                     <div class="row mb-3 mt-4">
-                        <div class="col-sm-4 text-muted fw-bold">添付ファイル：</div>
+                        <div class="col-sm-4 text-muted fw-bold">添付ファイル・リンク：</div>
                         <div class="col-sm-8">
                             <ul class="list-group">
                                 {% for attachment in object.attachments.all %}
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
-                                            {{ attachment.file.name|cut:"record_files/" }}
-                                        </a>
+                                        {% if attachment.file_url %}
+                                            <a href="{{ attachment.file_url }}" target="_blank">
+                                                <i class="bi bi-google me-1 text-danger"></i> {{ attachment.file_name }}
+                                            </a>
+                                        {% elif attachment.file %}
+                                            <a href="{{ attachment.file.url }}" target="_blank">
+                                                {{ attachment.file.name|cut:"record_files/" }}
+                                            </a>
+                                        {% endif %}
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -79,169 +81,88 @@
                     </div>
                 {% else %}
                     <div class="row mb-3 mt-4">
-                        <div class="col-sm-4 text-muted">添付ファイル：</div>
+                        <div class="col-sm-4 text-muted fw-bold">添付ファイル・リンク：</div>
                         <div class="col-sm-8 border p-2 bg-light rounded text-muted">(なし)</div>
                     </div>
                 {% endif %}
 
                 <hr class="mt-4">
 
-                {# 既読ステータスとアクション (修正箇所) #}
+                <!-- 確認状況 -->
                 <h5 class="mb-3"><i class="bi bi-bookmark-check me-2"></i> 確認状況</h5>
                 {% if object.is_read %}
                     <div class="alert alert-success text-center">
                         <i class="bi bi-check-circle-fill me-2"></i>
-                        **この記録は既読です。**（確認者：{{ object.read_by.full_name }}, 日付：{{ object.read_at|date:'Y/m/d' }}）
+                        この記録は既読です。（確認者：{{ object.read_by.full_name }}, 日付：{{ object.read_at|date:'Y/m/d' }}）
                     </div>
-                    
-                    {# 💡 修正点: 既読取り消しアクションのフォームを追加 #}
                     <form method="post" class="text-center">
                         {% csrf_token %}
                         <input type="hidden" name="unmark_read" value="true">
                         <button class="btn btn-lg btn-warning mt-3">
-                            <i class="bi bi-arrow-counterclockwise me-2"></i> 既読を取り消して未読に戻す（差し戻し）
+                            <i class="bi bi-arrow-counterclockwise me-2"></i> 既読を取り消して未読に戻す
                         </button>
                     </form>
-                    
                 {% else %}
                     <div class="alert alert-danger text-center">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        この記録は**未確認**です。
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> この記録は未確認です。
                     </div>
-                    {# 既読処理フォーム #}
                     <form method="post" class="text-center">
                         {% csrf_token %}
                         <input type="hidden" name="mark_read" value="true">
                         <button class="btn btn-lg btn-success mt-3">
-                            <i class="bi bi-hand-thumbs-up-fill me-2"></i> 確認済として処理する
+                            <i class="bi bi-hand-thumbs-up-fill me-2"></i> 確認済として処理
                         </button>
                     </form>
                 {% endif %}
 
                 <hr class="mt-4">
 
-                {# 担任からのフィードバック (メモ & スタンプ) セクション #}
+                <!-- 担任からのフィードバック -->
                 <h5 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック（生徒向け）</h5>
-                
-                {# 既存メモの表示エリア #}
                 {% if current_memo %}
                     <div class="alert alert-info p-3 mb-3 border-start border-info border-5">
-                        
-                        {# NEW: メタ情報と削除ボタンをフレックスで横並びにする #}
                         <div class="d-flex justify-content-between align-items-start">
                             <p class="mb-1 text-muted small">
-                                メモ記入者: **{{ current_memo.teacher.full_name }}** (最終更新: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
+                                メモ記入者: {{ current_memo.teacher.full_name }} (最終更新: {{ current_memo.updated_at|date:'Y/m/d H:i' }})
                             </p>
-                            
-                            {# 【NEW】削除ボタンの追加 (作成者または管理者のみ表示) #}
                             {% if current_memo.teacher == request.user or request.user.is_admin %}
-                                <a href="{% url 'notebook:record_memo_delete' pk=current_memo.pk %}" class="btn btn-outline-danger btn-sm flex-shrink-0">
+                                <a href="{% url 'notebook:record_memo_delete' pk=current_memo.pk %}" 
+                                   class="btn btn-outline-danger btn-sm flex-shrink-0">
                                     <i class="bi bi-trash me-1"></i> メモを削除
                                 </a>
                             {% endif %}
                         </div>
-                        
-                        {# スタンプ表示 #}
                         <h4 class="d-flex align-items-center mb-2">
                             {% if current_memo.stamp == 'LIKE' %}
-                                <span class="badge bg-success me-2"> 
-                                    <i class="bi bi-hand-thumbs-up-fill text-warning me-1"></i> 
-                                    <span class="text-warning">イイネ！</span>
-                                </span>
+                                <span class="badge bg-success me-2"><i class="bi bi-hand-thumbs-up-fill me-1"></i> イイネ！</span>
                             {% elif current_memo.stamp == 'GOOD' %}
-                                <span class="badge bg-primary me-2">
-                                    <i class="bi bi-star-fill me-1"></i> がんばったね
-                                </span>
+                                <span class="badge bg-primary me-2"><i class="bi bi-star-fill me-1"></i> がんばったね</span>
                             {% elif current_memo.stamp == 'TRY' %}
-                                <span class="badge bg-secondary me-2">
-                                    <i class="bi bi-lightbulb-fill text-info me-1"></i> 
-                                    <span class="text-info">次回に期待</span>
-                                </span>
+                                <span class="badge bg-secondary me-2"><i class="bi bi-lightbulb-fill me-1 text-info"></i> 次回に期待</span>
                             {% elif current_memo.stamp == 'CHECK' %}
-                                <span class="badge bg-primary me-2">
-                                    <i class="bi bi-check-square-fill me-1"></i> 確認済
-                                </span>
+                                <span class="badge bg-primary me-2"><i class="bi bi-check-square-fill me-1"></i> 確認済</span>
                             {% else %}
-                                <span class="badge bg-light text-muted border me-2"> 
-                                    <i class="bi bi-dot me-1"></i> スタンプなし
-                                </span>
+                                <span class="badge bg-light text-muted border me-2"><i class="bi bi-dot me-1"></i> スタンプなし</span>
                             {% endif %}
                         </h4>
-
-                        {# メモテキスト表示 #}
                         {% if current_memo.text %}
                             <p class="fw-bold">指導コメント:</p>
-                            <div class="p-2 border rounded bg-light">
-                                {{ current_memo.text|linebreaksbr }}
-                            </div>
+                            <div class="p-2 border rounded bg-light">{{ current_memo.text|linebreaksbr }}</div>
                         {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-light text-center text-muted border">
+                        担任からのコメントはまだありません。
                     </div>
                 {% endif %}
 
-                {# メモ記入/編集フォーム #}
-                
-                <h6 class="mt-4 mb-3">
-                    {% if current_memo %}
-                        <i class="bi bi-pencil-square me-1"></i> 指導メモを編集
-                    {% else %}
-                        <i class="bi bi-journal-plus me-1"></i> 新しい指導メモを記入
-                    {% endif %}
-                </h6>
-                
-                <form method="post" 
-                    action="{% if current_memo %}
-                                {% url 'notebook:record_memo_update' pk=current_memo.pk %}
-                            {% else %}
-                                {% url 'notebook:record_memo_create' record_pk=object.pk %}
-                            {% endif %}"
-                >
-                    {% csrf_token %}
-                    
-                    {# フォーム全体のエラー表示 #}
-                    {% if memo_form.non_field_errors %}
-                        <div class="alert alert-danger">{{ memo_form.non_field_errors }}</div>
-                    {% endif %}
-
-                    <div class="mb-3">
-                        {# スタンプのラジオボタン #}
-                        <label class="form-label fw-bold">{{ memo_form.stamp.label }}</label>
-                        <div class="d-flex flex-wrap gap-3 p-3 border rounded bg-light">
-                            {% for radio in memo_form.stamp %}
-                                <div class="form-check me-4">
-                                    {{ radio.tag }}
-                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                        {{ radio.choice_label }}
-                                    </label>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        {% if memo_form.stamp.errors %}
-                            <div class="alert alert-danger p-1 mt-1">{{ memo_form.stamp.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {# テキストエリア #}
-                        <label for="{{ memo_form.text.id_for_label }}" class="form-label fw-bold">{{ memo_form.text.label }}</label>
-                        {{ memo_form.text }}
-                        {% if memo_form.text.errors %}
-                            <div class="alert alert-danger p-1 mt-1">{{ memo_form.text.errors }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-save me-2"></i> メモを保存・更新
-                        </button>
-                    </div>
-                </form>
-
-                <hr class="mt-4">
+                <!-- 戻るボタン -->
                 <div class="text-center mt-4">
                     <a href="{% url 'notebook:teacher_record_list' %}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> 提出状況一覧に戻る
                     </a>
                 </div>
+
             </div>
         </div>
     </div>

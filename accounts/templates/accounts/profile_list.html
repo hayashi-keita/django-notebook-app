@@ -3,103 +3,175 @@
 {% block title %}ユーザー一覧{% endblock %}
 
 {% block contents %}
-<div class="container my-5"> {# mt-4をmy-5に変更し、上下の余白をプロフィール詳細と統一 #}
-    <h2 class="mb-4">ユーザー一覧</h2>
+<div class="row my-4">
+    <div class="col-12">
+        <h1 class="h3 mb-4 text-gray-800">
+            <i class="bi bi-people-fill me-2"></i>ユーザー一覧
+        </h1>
+        
+        <!-- フィルタリング/検索フォーム -->
+        <div class="card shadow mb-4">
+            <div class="card-body bg-light rounded">
+                <form method="get" class="row g-3 align-items-end">
+                    
+                    <!-- 検索キーワード -->
+                    <div class="col-md-6 col-lg-4">
+                        <label for="q-filter" class="form-label small fw-bold">氏名、ユーザー名で検索</label>
+                        <input type="text" id="q-filter" name="q" 
+                               value="{{ q }}" 
+                               class="form-control form-control-sm"
+                               placeholder="検索キーワード">
+                    </div>
 
-    {# 検索フォーム #}
-    <form method="get" class="mb-4 d-flex"> 
-        <input type="text" name="q" value="{{ q }}" class="form-control me-2" placeholder="氏名、ユーザー名などで検索">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-search"></i> 検索
-        </button>
-    </form>
+                    <!-- 役割フィルター -->
+                    <div class="col-md-3 col-lg-2">
+                        <label for="role-filter" class="form-label small fw-bold">役割</label>
+                        <select id="role-filter" name="role" class="form-select form-select-sm">
+                            <option value="">全ての役割</option>
+                            <option value="STUDENT" {% if request.GET.role == 'STUDENT' %}selected{% endif %}>生徒</option>
+                            <option value="TEACHER" {% if request.GET.role == 'TEACHER' %}selected{% endif %}>先生</option>
+                            <option value="HEAD_TEACHER" {% if request.GET.role == 'HEAD_TEACHER' %}selected{% endif %}>学年主任</option>
+                            <option value="ADMIN" {% if request.GET.role == 'ADMIN' %}selected{% endif %}>管理者</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 学年フィルター (ビューから渡された grades を使用) -->
+                    <div class="col-md-3 col-lg-2">
+                        <label for="grade-filter" class="form-label small fw-bold">学年</label>
+                        <select id="grade-filter" name="grade" class="form-select form-select-sm">
+                            <option value="">全ての学年</option>
+                            {% for g in grades %}
+                                <option value="{{ g.pk }}" {% if request.GET.grade|default:'' == g.pk|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>氏名</th>
-                    <th>ユーザー名</th>
-                    <th>所属</th>
-                    <th>学年</th>
-                    <th>クラス</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
+                    <!-- ボタン群 -->
+                    <div class="col-md-12 col-lg-4 d-flex">
+                        <button type="submit" 
+                                class="btn btn-primary btn-sm me-2 flex-grow-1">
+                            <i class="bi bi-filter"></i> フィルタ適用 / 検索
+                        </button>
+                        <!-- リセットボタン: クエリパラメータなしで現在のURLに遷移 -->
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                onclick="window.location.href='{% url 'accounts:profile_list' %}'">
+                            <i class="bi bi-arrow-counterclockwise"></i> リセット
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- ユーザーテーブル -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">ユーザー名簿</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col" style="width: 5%;">ID</th>
+                                <th scope="col" style="width: 20%;">氏名</th>
+                                <th scope="col" style="width: 15%;">ユーザー名</th>
+                                <th scope="col" style="width: 15%;">役割</th>
+                                <th scope="col" style="width: 15%;">学年</th>
+                                <th scope="col" style="width: 15%;">クラス</th>
+                                <th scope="col" class="text-center" style="width: 15%;">操作</th>
+                            </tr>
+                        </thead>
+                            <tbody>
+                                {% for obj in object_list %}
+                                    <tr>
+                                        <td>{{ obj.pk }}</td>
+                                        <td>
+                                            <a href="{% url 'accounts:profile_detail' obj.pk %}" class="text-decoration-none fw-bold text-dark">
+                                                {{ obj.full_name|default:obj.username|default:"No Name" }}
+                                            </a>
+                                        </td>
+                                        <td class="small text-muted">{{ obj.username }}</td>
+                                        <td>
+                                            {% if obj.role == 'STUDENT' %}
+                                                <span class="badge bg-info">生徒</span>
+                                            {% elif obj.role == 'TEACHER' %}
+                                                <span class="badge bg-warning text-dark">先生</span>
+                                            {% elif obj.role == 'HEAD_TEACHER' %}
+                                                <span class="badge bg-primary text-light">主任</span>
+                                            {% elif obj.role == 'ADMIN' %}
+                                                <span class="badge bg-danger">管理者</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ obj.get_role_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ obj.grade.name|default:"-" }}</td>
+                                        <td>{{ obj.classroom.name|default:"-" }}</td>
+                                        <td class="text-center text-nowrap">
+                                            <a href="{% url 'accounts:profile_detail' obj.pk %}" class="btn btn-sm btn-outline-info me-1">
+                                                <i class="bi bi-eye"></i> 詳細
+                                            </a>
+                                            {% if request.user.is_admin %}
+                                                <a href="{% url 'accounts:profile_update' obj.pk %}" class="btn btn-warning btn-sm me-1">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'accounts:profile_delete' obj.pk %}" class="btn btn-danger btn-sm">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">ユーザーが見つかりませんでした。</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-            <tbody>
-                {% for obj in object_list %}
-                    <tr>
-                        <td>{{ obj.pk }}</td>
-                        
-                        {# 💡 氏名を詳細ページへのリンクにする #}
-                        <td>
-                            <a href="{% url 'accounts:profile_detail' obj.pk %}" class="text-decoration-none">
-                                {{ obj.full_name|default:obj.username|default:"No Name" }}
+        <!-- ページネーション -->
+        {% if is_paginated %}
+        <nav aria-label="ページネーション" class="mt-4">
+            <ul class="pagination justify-content-center shadow-sm">
+                <!-- ページネーションリンクに全てのフィルターパラメータを保持させる -->
+                {% with current_params='q='|add:q|add:'&role='|add:request.GET.role|add:'&grade='|add:request.GET.grade %}
+                
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}" aria-label="前へ">
+                                <span aria-hidden="true">&laquo;</span>
                             </a>
-                        </td>
-                        
-                        <td>{{ obj.username }}</td>
-                        
-                        {# 役割と学年・クラス・性別はバッジやフォールバックで表示を改善 #}
-                        <td>
-                            {% if obj.role == 'STUDENT' %}
-                                <span class="badge bg-info">生徒</span>
-                            {% elif obj.role == 'TEACHER' %}
-                                <span class="badge bg-warning text-dark">先生</span>
-                            {% elif obj.role == 'ADMIN' %}
-                                <span class="badge bg-danger">管理者</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ obj.get_role_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ obj.grade.name|default:"-" }}</td>
-                        <td>{{ obj.classroom.name|default:"-" }}</td>
-                        
-                        {# 💡 性別とメールは省略し、代わりに操作列に詳細ボタンを追加 #}
-                        {# メールと性別は詳細画面で見れば十分な情報と判断 #}
-                        
-                        <td class="text-nowrap">
-                            <a href="{% url 'accounts:profile_detail' obj.pk %}" class="btn btn-sm btn-outline-primary me-2">詳細</a>
-                            {% if request.user.is_admin %}
-                                <a href="{% url 'accounts:profile_update' obj.pk %}" class="btn btn-warning btn-sm me-2">編集</a>
-                                <a href="{% url 'accounts:profile_delete' obj.pk %}" class="btn btn-danger btn-sm">削除</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">ユーザーが見つかりませんでした。</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    {# ページネーション (既存のコードを維持) #}
-    <nav aria-label="ページナビゲーション">
-        <ul class="pagination justify-content-center">
-            {% if object_list.has_previous %}
-                <li class="page-item">
-                    <a href="?q={{ q }}&page={{ object_list.previous_page_number }}" class="page-link">前へ</a>
-                </li>
-            {% endif %}
-            
-            {% for num in object_list.paginator.page_range %}
-                {% if object_list.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% else %}
-                    <li class="page-item"><a href="?q={{ q }}&page={{ num }}" class="page-link">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    {% endif %}
 
-            {% if object_list.has_next %}
-                <li class="page-item">
-                    <a href="?q={{ q }}&page={{ object_list.next_page_number }}" class="page-link">次へ</a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+                    {% for i in paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}&{{ current_params }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ current_params }}" aria-label="次へ">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    {% endif %}
+                
+                {% endwith %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
 </div>
-{% endblock%}
+{% endblock %}

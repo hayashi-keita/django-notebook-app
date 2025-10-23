@@ -56,15 +56,20 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentAndAdminMixin, CreateView
         if not self.request.user.classroom or not self.request.user.classroom.homeroom_teacher:
             messages.error(self.request, "担任が設定されていないため提出できません。")
             return redirect(self.success_url)
-        
+        # 添付ファイル処理
         response = super().form_valid(form)
-        # ファイルを取得
         files = self.request.FILES.getlist('file')
         for f in files:
             RecordAttachment.objects.create(record=self.object, file=f)
+        # 手動リンク
+        file_name = self.request.POST.getlist('file_name')
+        file_urls = self.request.POST.getlist('file_url')
+        for name, url in zip(file_name, file_urls):
+            if name and url:
+                RecordAttachment.objects.create(record=self.object, file_name=name, file_url=url)
 
         messages.success(self.request, f'{submitted_date}分の連絡帳を提出しました。')
-
+        # 通知
         Notification.objects.create(
             sender=self.request.user,
             recipient=self.request.user.classroom.homeroom_teacher,
@@ -154,6 +159,14 @@ class StudentRecordUpdateView(LoginRequiredMixin, StudentAndAdminMixin, UpdateVi
         files = self.request.FILES.getlist('file')
         for f in files:
             RecordAttachment.objects.create(record=self.object, file=f)
+        
+        # Googleドライブリンクの手動追加対応
+        file_names = self.request.POST.getlist('file_name')
+        file_urls = self.request.POST.getlist('file_url')
+        for name, url in zip(file_names, file_urls):
+            if name and url:
+                RecordAttachment.objects.create(record=self.object, file_name=name, file_url=url)
+
         messages.success(self.request, '連絡帳を更新しました。')
         return response
 

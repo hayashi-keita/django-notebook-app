@@ -75,11 +75,18 @@ class DailyRecord(models.Model):
 
 class RecordAttachment(models.Model):
     record = models.ForeignKey(DailyRecord, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='record_files/%Y/%m/%d/', verbose_name='添付ファイル')
+    file = models.FileField(upload_to='record_files/%Y/%m/%d/', verbose_name='添付ファイル', blank=True, null=True)
+    file_name = models.CharField(max_length=255, verbose_name='ファイル名', blank=True, null=True)
+    file_url = models.URLField(verbose_name='Google Driveリンク', blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name='アップロード日時')
 
     def __str__(self):
-        return f"{self.record} に添付されたファイル： {self.file.name.split('/')[-1]}"
+        if self.file_url:
+            return f"{self.record} に添付されたリンク：{self.file_name}"
+        elif self.file:
+            return f"{self.record} に添付されたファイル：{self.file.name.split('/')[-1]}"
+        else:
+            return "添付なし"
 
     
 class Memo(models.Model):
