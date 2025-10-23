@@ -27,7 +27,7 @@ class CustomUserListView(TeacherAndAdminOnlyMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = CustomUser.objects.all().order_by('pk')
+        queryset = CustomUser.objects.all().select_related('grade', 'classroom').order_by('pk')
         q = self.request.GET.get('q')
         if q:
             queryset = queryset.filter(
