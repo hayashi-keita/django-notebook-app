@@ -103,8 +103,8 @@
                                             <span class="badge bg-secondary">{{ obj.get_role_display|default:"-" }}</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ obj.grade.name|default_if_none:"-" }}</td>
-                                    <td>{{ obj.classroom.name|default_if_none:"-" }}</td>
+                                    <td>{{ obj.grade|default_if_none:"-" }}</td>
+                                    <td>{{ obj.classroom|default_if_none:"-" }}</td>
                                     <td>{{ obj.student_id|default_if_none:"-" }}</td>
                                     <td class="text-center text-nowrap">
                                         <a href="{% url 'accounts:profile_detail' obj.pk %}" class="btn btn-sm btn-outline-info me-1">
