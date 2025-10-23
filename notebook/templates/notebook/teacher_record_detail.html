@@ -60,7 +60,7 @@
                 <!-- 添付ファイル・リンク -->
                 {% if object.attachments.all %}
                     <div class="row mb-3 mt-4">
-                        <div class="col-sm-4 text-muted fw-bold">添付ファイル・リンク：</div>
+                        <div class="col-sm-4 text-muted fw-bold">添付ファイルリンク：</div>
                         <div class="col-sm-8">
                             <ul class="list-group">
                                 {% for attachment in object.attachments.all %}
@@ -81,7 +81,7 @@
                     </div>
                 {% else %}
                     <div class="row mb-3 mt-4">
-                        <div class="col-sm-4 text-muted fw-bold">添付ファイル・リンク：</div>
+                        <div class="col-sm-4 text-muted fw-bold">添付ファイルリンク：</div>
                         <div class="col-sm-8 border p-2 bg-light rounded text-muted">(なし)</div>
                     </div>
                 {% endif %}
