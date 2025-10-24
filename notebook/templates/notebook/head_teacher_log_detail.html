@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}学年主任用 メモ詳細 - {{ object.student.full_name }}に関するログ{% endblock %}
+
+{% block contents %}
+
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {# リンク先を学年主任用の一覧ビューに変更 #}
+            <li class="breadcrumb-item"><a href="{% url 'notebook:head_teacher_log_list' %}">担当学年メモ一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ object.student.full_name }}に関するログ</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white p-4 d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">
+                <i class="bi bi-journal-text me-2"></i> {{ object.student.full_name }} への共有メモ (詳細)
+            </h2>
+            {% if object.is_important %}
+                <span class="badge bg-danger fs-5 p-2">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> 要会議
+                </span>
+            {% endif %}
+        </div>
+        
+        <div class="card-body p-5">
+            {# 基本情報 #}
+            <div class="row mb-4 border-bottom pb-3">
+                <div class="col-md-4 mb-3">
+                    <p class="text-muted mb-1">対象生徒:</p>
+                    <h4 class="fw-bold text-primary">
+                        {{ object.student.full_name }}
+                    </h4>
+                    <span class="badge bg-secondary fs-6">
+                        {{ object.student.classroom.grade }}年 {{ object.student.classroom.name }}組
+                    </span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <p class="text-muted mb-1">作成者 / 作成日時:</p>
+                    <h5 class="fw-bold">
+                        {{ object.teacher.full_name }}
+                    </h5>
+                    <small class="text-muted">
+                        {{ object.created_at|date:'Y年m月d日 H:i' }}
+                    </small>
+                </div>
+                <div class="col-md-4 mb-3 text-md-end">
+                    <p class="text-muted mb-1">最終更新日時:</p>
+                    <h5 class="fw-bold">
+                        {# 作成日時と更新日時が異なる場合のみ表示 #}
+                        {% if object.updated_at|date:'Y-m-d H:i' != object.created_at|date:'Y-m-d H:i' %}
+                            {{ object.updated_at|date:'Y年m月d日 H:i' }}
+                        {% else %}
+                            作成以降の更新なし
+                        {% endif %}
+                    </h5>
+                </div>
+            </div>
+
+            {# メモ内容 #}
+            <div class="mb-5">
+                <h4 class="mb-3 text-secondary border-bottom pb-2">ログ内容 ({{ object.is_important|yesno:'重要,通常' }})</h4>
+                <div class="p-4 bg-light rounded shadow-sm" style="white-space: pre-wrap; min-height: 150px;">
+                    {# モデルのtextフィールドを表示 #}
+                    {{ object.text|linebreaksbr }}
+                </div>
+            </div>
+
+            {# アクションボタン #}
+            <div class="d-flex justify-content-between align-items-center">
+                
+                <span class="text-muted fst-italic">※ 学年主任からは他の教師のメモを編集・削除できません。</span>
+
+                <div class="d-flex gap-3">
+                    {# リンク先を学年主任用の一覧ビューに変更 #}
+                    <a href="{% url 'notebook:head_teacher_log_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left-circle me-1"></i> 一覧に戻る
+                    </a>
+                    
+                    {# 🚨 編集・削除は、本人が作成した場合 **のみ** 表示するロジックに変更 #}
+                    {# 学年主任（request.user）であっても、他の教師が作成したログは編集させません #}
+                    {# 管理者（request.user.is_admin）は、このビューではなく管理者パネルから操作することが一般的です #}
+                    {% if object.teacher == request.user %}
+                        {# 編集・削除のURLはteacher_log_update/deleteを流用しても良いが、ここでは学年主任用を想定 #}
+                        {# URL名 'notebook:teacher_log_update' が学年主任でも利用可能であることを前提とする #}
+                        <a href="{% url 'notebook:teacher_log_update' object.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil-square me-1"></i> 自分のメモを編集
+                        </a>
+                        <a href="{% url 'notebook:teacher_log_delete' object.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> 自分のメモを削除
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}過去の記録詳細{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <h2 class="mb-4">過去の記録詳細（{{ object.date_for|date:'Y年n月j日 l' }}分）</h2>
+            <p class="text-muted">所属：{{ object.student.classroom.grade }}年 {{ object.student.classroom.name }}</p>
+            <hr>
+            
+            <div class="card p-4 shadow">
+                <!-- 既読ステータス -->
+                {% if object.is_read %}
+                    <div class="alert alert-success text-center">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong>担任による確認済です！</strong>
+                        （確認者：{{ object.read_by.full_name }}、{{ object.read_at|date:'Y/m/d' }}）
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-hourglass-split me-2"></i>
+                        担任の確認待ちです。
+                    </div>
+                {% endif %}
+
+                <!-- 提出内容 -->
+                <h4 class="card-title mb-3">提出内容</h4>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">体調（10段階）：</div>
+                    <div class="col-sm-8 fw-bold">{{ object.physical_level }}</div>
+                </div>
+                <div class="row mb-3 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted">体調メモ：</div>
+                    <div class="col-sm-8">{{ object.physical_condition|default:"(なし)" }}</div>
+                </div>
+                <div class="row mb-3 mt-3">
+                    <div class="col-sm-4 text-muted">メンタル（10段階）：</div>
+                    <div class="col-sm-8 fw-bold">{{ object.mental_level }}</div>
+                </div>
+                <div class="row mb-3 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted">メンタルメモ：</div>
+                    <div class="col-sm-8">{{ object.mental_condition|default:"(なし)" }}</div>
+                </div>
+                <div class="row mb-3 mt-4">
+                    <div class="col-sm-4 text-muted">振り返り：</div>
+                    <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr|default:"(なし)" }}</div>
+                </div>
+
+                <!-- 添付Googleドライブリンク -->
+                {% if object.attachments.all %}
+                    <div class="row mb-3 mt-4">
+                        <div class="col-sm-4 text-muted">添付ファイルリンク：</div>
+                        <div class="col-sm-8">
+                            <ul class="list-group">
+                                {% for attachment in object.attachments.all %}
+                                    <li class="list-group-item">
+                                        {% if attachment.file_url %}
+                                            <a href="{{ attachment.file_url }}" target="_blank">
+                                                <i class="bi bi-google me-1 text-danger"></i> {{ attachment.file_name }}
+                                            </a>
+                                        {% elif attachment.file %}
+                                            <a href="{{ attachment.file.url }}" target="_blank">
+                                                {{ attachment.file.name|cut:"record_files/" }}
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="row mb-3 mt-4">
+                        <div class="col-sm-4 text-muted">添付ファイルリンク：</div>
+                        <div class="col-sm-8 border p-2 bg-light rounded text-muted">(なし)</div>
+                    </div>
+                {% endif %}
+
+                <hr class="mt-4">
+
+                <!-- 担任フィードバック -->
+                <h4 class="mb-3"><i class="bi bi-chat-left-text me-2"></i> 担任からのフィードバック</h4>
+                {% if current_memo %}
+                    <div class="alert alert-info p-3 mb-4 border-start border-info border-5">
+                        <p class="mb-2 text-muted small">
+                            確認者: <strong>{{ current_memo.teacher.full_name }}</strong> 
+                            ({{ current_memo.updated_at|date:'Y/m/d H:i' }})
+                        </p>
+                        <h5 class="d-flex align-items-center mb-2">
+                            {% if current_memo.stamp == 'LIKE' %}
+                                <span class="badge bg-success me-2"><i class="bi bi-hand-thumbs-up-fill"></i> イイネ！</span>
+                            {% elif current_memo.stamp == 'GOOD' %}
+                                <span class="badge bg-primary me-2"><i class="bi bi-star-fill"></i> がんばったね</span>
+                            {% elif current_memo.stamp == 'TRY' %}
+                                <span class="badge bg-secondary me-2"><i class="bi bi-lightbulb-fill text-info"></i> 次回に期待</span>
+                            {% elif current_memo.stamp == 'CHECK' %}
+                                <span class="badge bg-primary me-2"><i class="bi bi-check-square-fill"></i> 確認済</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border me-2">スタンプなし</span>
+                            {% endif %}
+                        </h5>
+                        {% if current_memo.text %}
+                            <p class="fw-bold">コメント:</p>
+                            <div class="p-2 border rounded bg-light">{{ current_memo.text|linebreaksbr }}</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-light text-muted text-center border">
+                        <i class="bi bi-x-circle me-1"></i> 担任からのコメントはまだありません。
+                    </div>
+                {% endif %}
+
+                <hr class="mt-4">
+
+                <!-- ボタン -->
+                <div class="text-center mt-4">
+                    {% if not object.is_read %}
+                        <a href="{% url 'notebook:student_record_update' object.pk %}" class="btn btn-warning me-2">
+                            <i class="bi bi-pencil-square me-1"></i> 編集
+                        </a>
+                        <a href="{% url 'notebook:student_record_delete' object.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> 削除
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'notebook:student_record_list' %}" class="btn btn-secondary ms-2">
+                        <i class="bi bi-arrow-left"></i> 一覧に戻る
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

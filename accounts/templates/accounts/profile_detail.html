@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ object.full_name|default:object.username }}のプロフィール{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            
+            {# プロフィールヘッダー：氏名/ユーザー名とアイコン #}
+            <div class="card shadow-lg mb-4 border-0">
+                <div class="card-body text-center bg-primary text-white rounded-top">
+                    {# ユーザーの役割に応じたアイコンを表示 #}
+                    {% if object.is_teacher %}
+                        <i class="bi bi-person-badge-fill" style="font-size: 3rem;"></i> 
+                    {% elif object.is_student %}
+                        <i class="bi bi-mortarboard-fill" style="font-size: 3rem;"></i>
+                    {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 3rem;"></i>
+                    {% endif %}
+                    
+                    {# ユーザー名と役割を表示。フルネームを優先 #}
+                    <h2 class="card-title mt-2">
+                        {{ object.full_name|default:object.username|default:"No Name" }}
+                    </h2>
+                    <p class="card-text fs-5 mb-0">
+                        <span class="badge bg-light text-primary">{{ object.get_role_display }}</span>
+                    </p>
+                </div>
+            </div>
+            
+            {# 詳細情報セクション #}
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 text-muted">基本情報</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>ユーザー名</strong>
+                        <span>{{ object.username }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>ID (PK)</strong>
+                        <span>{{ object.pk }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>メールアドレス</strong>
+                        {# メールが空欄の場合の表示を改善 #}
+                        <span class="text-muted">{{ object.email|default:"未登録" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>性別</strong>
+                        <span>{{ object.get_gender_display }}</span>
+                    </li>
+                </ul>
+            </div>
+            
+            {# 所属情報セクション #}
+            {% if object.is_student or object.is_teacher %}
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 text-muted">所属情報</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>学年</strong>
+                        {# 関連オブジェクトがNoneの場合を考慮 #}
+                        <span>{{ object.grade|default:"情報なし" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>クラス</strong>
+                        <span>{{ object.classroom|default:"情報なし" }}</span>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+
+            {# アクションボタン #}
+            <div class="d-flex justify-content-end mt-4">
+                {# 編集ボタン: 自分のプロフィールか管理者である場合のみ表示 #}
+                {% if object == request.user or request.user.is_admin %}
+                    <a href="{% url 'accounts:profile_update' object.pk %}" class="btn btn-primary btn-lg me-3">
+                        <i class="bi bi-pencil-square me-2"></i>プロフィールを編集
+                    </a>
+                {% endif %}
+                
+                {# 削除ボタン: 管理者 の場合のみ表示 #}
+                {% if request.user.is_admin %}
+                    <a href="{% url 'accounts:profile_delete' object.pk %}" class="btn btn-danger btn-lg">
+                        <i class="bi bi-trash-fill me-2"></i>ユーザー削除
+                    </a>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

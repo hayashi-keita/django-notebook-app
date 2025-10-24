@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}削除確認{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <h2 class="mb-4 text-danger text-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> 削除確認
+            </h2>
+            <div class="card p-4 shadow">
+                <p class="lead text-center">
+                    **{{ object.name }}** を完全に削除します。よろしいですか？
+                </p>
+                <div class="alert alert-danger text-center small mt-3">
+                    この**データ**に紐づく**すべてのユーザーデータ**も影響を受ける可能性があります。
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="bi bi-trash-fill me-2"></i> 削除を実行する
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-3">
+                    {% with url_name=request.resolver_match.url_name %}
+                        {% if 'grade' in url_name %}
+                            <a href="{% url 'notebook:grade_list'%}" class="btn btn-outline-secondary">キャンセル</a>
+                        {% elif 'classroom' in url_name %}
+                            <a href="{% url 'notebook:classroom_list' %}" class="btn btn-outline-secondary">キャンセル</a>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

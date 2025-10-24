@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{# 💡 objectが存在するかどうかでページタイトルを分岐 #}
+{% block title %}
+    {% if object %}
+        教師メモ編集 - {{ object.student.full_name }}
+    {% else %}
+        教師メモ作成
+    {% endif %}
+{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    {# 💡 objectが存在するかどうかで見出しを分岐 #}
+    <h2 class="mb-4">
+        {% if object %}
+            <i class="bi bi-pencil-square me-2"></i> 教師間共有メモの編集
+        {% else %}
+            <i class="bi bi-journal-text me-2"></i> 教師間共有メモの作成
+        {% endif %}
+    </h2>
+
+    <div class="alert alert-info border-start border-info border-5">
+        このメモは生徒には公開されず、**同じ学年の先生方**と情報共有されます。
+    </div>
+
+    <div class="card p-4 shadow-sm">
+        {# 💡 エラーを解消するため、生徒情報の表示をobjectの有無で完全に分岐する #}
+        {% if object %}
+            {# 更新時 (UpdateView): object.student を使用し、target_studentのルックアップを回避 #}
+            {% with student=object.student %}
+                <h4 class="mb-3">対象生徒：
+                    <span class="badge bg-primary me-2">{{ student.full_name }}</span>
+                    <span class="text-muted small">({{ student.classroom.grade }} {{ student.classroom.name }})</span>
+                </h4>
+            {% endwith %}
+        {% else %}
+            {# 新規作成時 (CreateView): target_student を使用 #}
+            <h4 class="mb-3">対象生徒：
+                <span class="badge bg-primary me-2">{{ target_student.full_name }}</span>
+                <span class="text-muted small">({{ target_student.classroom.grade }} {{ target_student.classroom.name }})</span>
+            </h4>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.text.id_for_label }}" class="form-label fw-bold">{{ form.text.label }}</label>
+                {{ form.text }}
+                {% if form.text.errors %} <div class="text-danger small">{{ form.text.errors }}</div>{% endif %}
+            </div>
+            <div class="form-check mb-4">
+                {{ form.is_important }}
+                <label for="{{ form.is_important.id_for_label }}" class="form-check-label">{{ form.is_important.label }}</label>
+                {% if form.is_important.errors %} <div class="text-danger small">{{ form.is_important.errors }}</div>{% endif %}
+            </div>
+
+            <button class="btn btn-success btn-lg">
+                {# 💡 objectが存在するかどうかでボタンの文言を分岐 #}
+                <i class="bi bi-save me-2"></i>
+                {% if object %}
+                    メモを更新
+                {% else %}
+                    メモを保存し共有
+                {% endif %}
+            </button>
+            
+            {# キャンセルボタンは一覧画面へ戻る #}
+            <a href="{% url 'notebook:teacher_log_list' %}" class="btn btn-secondary ms-2">キャンセル</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

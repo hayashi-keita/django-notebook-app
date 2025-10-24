@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}連絡帳の編集{% else %}連絡帳の提出{% endif %}{% endblock %}
+
+{% block contents %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <h2 class="mb-4 text-center">
+                {% if form.instance.pk %}
+                    連絡帳の編集（{{ form.instance.date_for|date:"Y年m月d日" }}分）
+                {% else %}
+                    連絡帳の提出
+                {% endif %}
+            </h2>
+
+            <div class="card p-4 shadow">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Django フォームフィールド -->
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="alert alert-danger p-1 mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Googleドライブリンク -->
+                    <div class="mb-3">
+                        <label class="form-label">Googleドライブ共有リンク（他の共有リンク可）</label>
+                        <div id="drive-links"></div>
+                        <button id="add-drive-link" type="button" class="btn btn-outline-secondary btn-sm">
+                            + 共有リンクを追加
+                        </button>
+                        <p class="form-text text-muted mt-1">
+                            ※ Googleドライブで「リンクを知っている全員が閲覧可」に設定したURLを貼り付けてください。
+                        </p>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            {% if form.instance.pk %}修正を保存{% else %}提出{% endif %}
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 既存の添付ファイルリンク -->
+                {% if form.instance.pk and form.instance.attachments.all %}
+                    <hr class="my-4">
+                    <h5>📎 既存の添付ファイルリンク</h5>
+                    <ul class="list-group">
+                        {% for attachment in form.instance.attachments.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {% if attachment.file_url %}
+                                    <a href="{{ attachment.file_url }}" target="_blank">
+                                        <i class="bi bi-google me-1 text-danger"></i> {{ attachment.file_name }}
+                                    </a>
+                                {% elif attachment.file %}
+                                    <a href="{{ attachment.file.url }}" target="_blank">
+                                        {{ attachment.file.name|cut:"record_files/" }}
+                                    </a>
+                                {% endif %}
+                                <form method="post" action="{% url 'notebook:attachment_delete' attachment.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">削除</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('add-drive-link').addEventListener('click', function() {
+    const container = document.getElementById('drive-links');
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('mb-2', 'd-flex', 'align-items-center');
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.name = 'file_name';
+    nameInput.placeholder = 'ファイル名';
+    nameInput.classList.add('form-control', 'me-1');
+
+    const urlInput = document.createElement('input');
+    urlInput.type = 'url';
+    urlInput.name = 'file_url';
+    urlInput.placeholder = 'https://drive.google.com/file/d/xxxxxx/view?usp=sharing';
+    urlInput.classList.add('form-control');
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.classList.add('btn', 'btn-danger', 'ms-2');
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', function() {
+        container.removeChild(wrapper);
+    });
+
+    wrapper.appendChild(nameInput);
+    wrapper.appendChild(urlInput);
+    wrapper.appendChild(delBtn);
+    container.appendChild(wrapper);
+});
+/*
+document.getElementById('add-file').addEventListener('click', function() {
+    const container = document.getElementById('file-uploads');
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('mb-2', 'd-flex', 'align-items-center');
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = 'file';
+    fileInput.classList.add('form-control');
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.classList.add('btn', 'btn-danger', 'ms-2');
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', function() {
+        container.removeChild(wrapper);
+    });
+
+    wrapper.appendChild(fileInput);
+    wrapper.appendChild(delBtn);
+    container.appendChild(wrapper);
+});
+*/
+</script>
+{% endblock %}
+
+{#
+<!-- ファイルアップロード本番環境無料枠では利用不可 -->
+<div class="mb-3">
+    <label class="form-label">添付ファイル（複数可）</label>
+    <div id="file-uploads"></div>
+    <button id="add-file" type="button" class="btn btn-outline-secondary btn-sm">
+        + ファイルを追加
+    </button>
+    <p class="form-text text-muted mt-1">
+        ※ 複数ファイルを追加する場合は「+ ファイルを追加」を押してください。
+    </p>
+</div>
+#}
+

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}メモ削除確認{% endblock %}
+
+{% block contents %}
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <h3 class="mb-4 text-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> メモ削除の確認
+            </h3>
+
+            <p class="lead mb-4">
+                以下のメモを本当に削除しますか？<br>
+                <strong class="text-primary">{{ object.student.full_name }}</strong> に関する内容です。
+            </p>
+
+            <div class="border rounded p-3 bg-light text-start mb-4">
+                <p class="mb-1"><strong>作成者:</strong> {{ object.teacher.full_name }}</p>
+                <p class="mb-1"><strong>内容:</strong><br>{{ object.text|linebreaksbr }}</p>
+                <p class="text-muted"><small>作成日: {{ object.created_at|date:"Y/m/d H:i" }}</small></p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger me-2">
+                    <i class="bi bi-trash-fill me-1"></i> 削除する
+                </button>
+                <a href="{% url 'notebook:teacher_log_list' %}" class="btn btn-secondary">
+                    キャンセル
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

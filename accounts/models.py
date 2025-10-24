@@ -1,0 +1,75 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+    ROLE_CHOICES = (
+        ('STUDENT', '生徒'),
+        ('TEACHER', '先生'),
+        ('HEAD_TEACHER', '学年主任'),
+        ('ADMIN', '管理者'),
+    )
+    GENDER_CHOICES = (
+        ('male', '男性'),
+        ('female', '女性'),
+        ('other', 'その他'),
+        ('no_answer', '回答しない'),
+    )
+
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STUDENT')
+    student_id = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name='生徒番号')
+
+    grade = models.ForeignKey(
+        'notebook.Grade',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='users',
+        verbose_name='学年',
+    )
+    classroom = models.ForeignKey(
+        'notebook.Classroom',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='members',
+        verbose_name='クラス'
+    )
+    head_of_grade = models.ForeignKey(
+        'notebook.Grade',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name='担当学年（主任用）',
+    )
+    full_name = models.CharField(max_length=50, verbose_name='氏名')
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, default='no_answer', verbose_name='性別')
+
+    
+    def __str__(self):
+        return f'{self.username} - {self.full_name} ({self.get_role_display()})'
+    
+    @property
+    def is_student(self):
+        return self.role == 'STUDENT'
+    
+    @property
+    def is_teacher(self):
+        return self.role == 'TEACHER'
+    
+    @property
+    def is_head_teacher(self):
+        return self.role == 'HEAD_TEACHER'
+    
+    @property
+    def is_admin(self):
+        return self.role == 'ADMIN'
+    
+    def save(self, *args, **kwargs):
+        # ロールが 'ADMIN' の場合、is_staff (管理サイトアクセス権) を True に設定
+        if self.role == 'ADMIN':
+            self.is_staff = True
+        else:
+            self.is_staff = False
+        super().save(*args, **kwargs)
+
+
