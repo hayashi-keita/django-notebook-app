@@ -392,7 +392,7 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
             # フィルタ対象：担当クラス内の特定学年
             main_queryset = my_class_record_base.filter(student__grade=filter_value)
             context['current_filter_label'] = f'担当クラス内： {filter_value}学年の平均'
-            # 比較対象：担当クラス外の同学年（filter_value）の全平均
+            # 比較対象：担当クラスの同学年（filter_value）の全平均
             compare_queryset = all_record_base.filter(student__grade=filter_value)
             context['compare_label'] = f'他クラス： {filter_value}学年の平均'
         
@@ -404,8 +404,7 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
                 context['current_filter_label'] = f'生徒個人： {student.get_full_name()}'
                 # 比較対象：その生徒が所属する学年のクラス平均
                 compare_queryset = all_record_base.filter(
-                    student__classroom=current_classroom,
-                ).exclude(student=student)
+                    student__classroom=current_classroom)
                 context['compare_label'] = f'他クラス： {student.grade}学年の平均'
             except AttributeError:
                 context['current_filter_label'] = '特定生徒'
