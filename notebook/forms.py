@@ -29,14 +29,12 @@ class DailyRecordForm(forms.ModelForm):
             'mental_level': '1が最低、10が最高の状態です。',
             'mental_condition': '具体的にメンタルに関して気づいた点があれば記入してください。',
         }
-        def clean_date_for(self):
-            date_for = self.cleaned_data.get('date_for')
-            if date_for and date_for > date.today():
-                raise ValidationError('未来の日付の連絡帳は提出できません。')
-            limit_date = date.today() - timedelta(days=7)
-            if date_for and date_for < limit_date:
-                raise ValidationError(f'{limit_date}以前の日付の連絡帳は提出でません。先生に相談してください。')
-            return date_for
+    
+    def clean_date_for(self):
+        date_for = self.cleaned_data.get('date_for')
+        if date_for and date_for > date.today():
+            raise ValidationError('未来の日付の連絡帳は提出できません。')
+        return date_for
 
 class GradeForm(forms.ModelForm):
     class Meta:

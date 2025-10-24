@@ -406,7 +406,7 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
                 compare_queryset = all_record_base.filter(
                     student__classroom=current_classroom,
                 ).exclude(student=student)
-                context['compare_label'] = f'他クラス： {filter_value}学年の平均'
+                context['compare_label'] = f'他クラス： {student.grade}学年の平均'
             except AttributeError:
                 context['current_filter_label'] = '特定生徒'
         
@@ -418,8 +418,14 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
             context['compare_label'] = '学校全体の平均'
         
         if not main_queryset.exists():
+            all_students = current_classroom.members.filter(role='STUDENT').order_by('grade', 'pk')
+            grades = sorted(list(set(s.grade.number for s in all_students if s.grade is not None)))
+
             context['total_records'] = 0
             context['datasets_json'] = json.dumps([])
+            context['error_message'] = '該当するレコードがありません。フィルタ条件を変更してください。'
+            context['available_grades'] = json.dumps(grades)
+            context['available_students'] = json.dumps([{'pk': s.pk, 'name': s.full_name} for s in all_students])
             context['filter_params'] = json.dumps({'filter': filter_type, 'value': filter_value})
             return context
 
@@ -460,6 +466,30 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
                 'tension': 0.3,
                 'pointRadius': 5,
             })
+            if compare_queryset:
+                compare_physical_map, compare_mental_map = get_average_data(compare_queryset)
+                compare_phys_data = [compare_physical_map.get(d) for d in sorted_dates]
+                compare_ment_data = [compare_mental_map.get(d) for d in sorted_dates]
+                datasets.append({
+                'label': f"体調（{context.get('compare_label', '比較対象')}）",
+                'data': compare_phys_data,
+                'borderColor': 'rgb(108, 117, 125)',
+                'borderDash': [5, 5],
+                'tension': 0.3,
+                'pointRadius': 3,
+                'pointHoverRadius': 5,
+                'spanGaps': True,
+                })
+                datasets.append({
+                    'label': f"メンタル（{context.get('compare_label', '比較対象')}）",
+                    'data': compare_ment_data,
+                    'borderColor': 'rgb(108, 117, 125)',
+                    'borderDash': [5, 5],
+                    'tension': 0.3,
+                    'pointRadius': 3,
+                    'pointHoverRadius': 5,
+                    'spanGaps': True,
+                })
             context['yAxisLabel'] = '評価レベル（1-10）'
 
         else:
@@ -524,7 +554,7 @@ class TeacherRecordGraphView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, Templ
         context['total_records'] = all_record_base.count()
         # フィルタリングオプションのための生徒と学年を取得
         all_students = current_classroom.members.filter(role='STUDENT').order_by('grade', 'pk')
-        grades = sorted(list(set(s.grade.pk for s in all_students if s.grade is not None)))
+        grades = sorted(list(set(s.grade.number for s in all_students if s.grade is not None)))
 
         context['available_grades'] = json.dumps(grades)
         context['available_students'] = json.dumps([{'pk': s.pk, 'name': s.full_name} for s in all_students])

@@ -7,7 +7,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
             <div class="mb-4 fs-4 fw-bold text-primary">
-                <i class="bi bi-calendar-check me-2"></i> 連絡帳 詳細（{{ object.date_for|date:'Y年m月d日'}}分）
+                <i class="bi bi-calendar-check me-2"></i> 連絡帳 詳細（{{ object.date_for|date:'Y年n月j日 l'}}分）
             </div>
 
             <div class="card p-4 shadow">
@@ -15,7 +15,7 @@
                     <i class="bi bi-person-fill me-2"></i>
                     {{ object.student.full_name }} さんの記録
                 </h4>
-                <p class="text-muted">所属： {{ object.student.classroom.grade }} {{ object.student.classroom.name }}</p>
+                <p class="text-muted">所属：{{ object.student.classroom.grade }}年 {{ object.student.classroom.name }}</p>
                 <hr>
                 
                 {# 💡 教師間共有メモへのリンク #}
@@ -58,7 +58,7 @@
 
                 <div class="row mb-3 mt-4">
                     <div class="col-sm-4 text-muted fw-bold">振り返り：</div>
-                    <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr }}</div>
+                    <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr|default:'(なし)' }}</div>
                 </div>
 
                  <!-- 添付Googleドライブリンク -->

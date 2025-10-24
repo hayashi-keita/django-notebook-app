@@ -42,11 +42,11 @@ class HeadTeacherRecordListView(LoginRequiredMixin, HeadTeacherAndAdminOnlyMixin
                 date_for = self.get_default_schoolday()
         else:
             date_for = self.get_default_schoolday()
-        self.selceted_date = date_for
+        self.selected_date = date_for
         
         queryset = DailyRecord.objects.filter(
             student__grade=user_grade,
-            date_for=self.selceted_date,
+            date_for=self.selected_date,
         ).select_related(
             'student', 'student__classroom', 'student__grade',
         ).order_by('-date_for')
@@ -55,9 +55,12 @@ class HeadTeacherRecordListView(LoginRequiredMixin, HeadTeacherAndAdminOnlyMixin
         if classroom_name:
             if classroom_name and classroom_name.lower() != 'all':
                 queryset = queryset.filter(student__classroom__name=classroom_name)
-        # 未確認フィルタ（例: ?unread=true）
-        if self.request.GET.get('unread') == 'true':
+        # 確認フィルタ
+        read_filter = self.request.GET.get('read', 'all')
+        if read_filter == 'unread':
             queryset = queryset.filter(is_read=False)
+        elif read_filter == 'read':
+            queryset = queryset.filter(is_read=True)
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -68,7 +71,7 @@ class HeadTeacherRecordListView(LoginRequiredMixin, HeadTeacherAndAdminOnlyMixin
         context['classrooms'] = Classroom.objects.filter(grade=user_grade).order_by('name')
         # 現在のフィルタ状態をテンプレートに渡す
         context['current_classroom'] = self.request.GET.get('classroom', 'all')
-        context['current_unread'] = self.request.GET.get('unread') == 'true'
+        context['current_read_filter'] = self.request.GET.get('read', 'all')
         context['selected_date'] = getattr(self, 'selected_date', self.get_default_schoolday())
         context['date_filter_value'] = context['selected_date'].isoformat()
         return context
@@ -199,6 +202,13 @@ class HeadTeacherRecordGraphView(LoginRequiredMixin, HeadTeacherAndAdminOnlyMixi
         if not main_queryset.exists():
             context['total_records'] = 0
             context['datasets_json'] = json.dumps([])
+            context['error_message'] = '該当するレコードがありません。フィルタ条件を変更してください。'
+            classrooms_in_grade = Classroom.objects.filter(grade=current_grade).order_by('name')
+            context['available_classrooms'] = json.dumps([
+                {'pk': c.pk, 'name': f'{c.grade}年 {c.name}'} for c in classrooms_in_grade
+            ])
+            context['filter_params'] = json.dumps({'filter': filter_type, 'value': filter_value})
+
             return context
 
         # データを取得・整形するヘルパー関数

@@ -5,10 +5,11 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
-            <h2 class="mb-4">過去の記録詳細（{{ object.date_for|date:'Y年m月d日' }}分）</h2>
+            <h2 class="mb-4">過去の記録詳細（{{ object.date_for|date:'Y年n月j日 l' }}分）</h2>
+            <p class="text-muted">所属：{{ object.student.classroom.grade }}年 {{ object.student.classroom.name }}</p>
+            <hr>
             
             <div class="card p-4 shadow">
-
                 <!-- 既読ステータス -->
                 {% if object.is_read %}
                     <div class="alert alert-success text-center">
@@ -43,7 +44,7 @@
                 </div>
                 <div class="row mb-3 mt-4">
                     <div class="col-sm-4 text-muted">振り返り：</div>
-                    <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr }}</div>
+                    <div class="col-sm-8 border p-2 bg-light rounded">{{ object.reflection|linebreaksbr|default:"(なし)" }}</div>
                 </div>
 
                 <!-- 添付Googleドライブリンク -->

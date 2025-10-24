@@ -51,11 +51,10 @@
             </div>
         </div>
     {% else %}
-        <div class="alert alert-warning text-center">
-            <i class="fas fa-exclamation-triangle"></i> 該当するレコードがありません。フィルタ条件を変更してください。
-        </div>
         {% if error_message %}
-            <div class="alert alert-danger text-center">{{ error_message }}</div>
+            <div class="alert alert-warning text-center">
+                <i class="fas fa-exclamation-triangle"></i> {{ error_message }}
+            </div>
         {% endif %}
     {% endif %}
 

@@ -66,7 +66,12 @@ class DailyRecordCreateView(LoginRequiredMixin, StudentAndAdminMixin, CreateView
         file_urls = self.request.POST.getlist('file_url')
         for name, url in zip(file_name, file_urls):
             if name and url:
+                # 名前とURL両方ある場合
                 RecordAttachment.objects.create(record=self.object, file_name=name, file_url=url)
+            elif url:
+                # URLのみ入力されている場合
+                RecordAttachment.objects.create(record=self.object, file_name='無題', file_url=url)
+            
 
         messages.success(self.request, f'{submitted_date}分の連絡帳を提出しました。')
         # 通知
@@ -176,6 +181,8 @@ class StudentRecordUpdateView(LoginRequiredMixin, StudentAndAdminMixin, UpdateVi
         for name, url in zip(file_names, file_urls):
             if name and url:
                 RecordAttachment.objects.create(record=self.object, file_name=name, file_url=url)
+            elif url:
+                RecordAttachment.objects.create(record=self.object, file_name='無題', file_url=url)
 
         messages.success(self.request, '連絡帳を更新しました。')
         return response
