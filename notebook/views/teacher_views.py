@@ -313,7 +313,6 @@ class TeacherLogListView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, ListView)
             except CustomUser.DoesNotExist:
                 pass
         context['selected_teacher_obj'] = selected_teacher_obj
-
         return context
 
 class TeacherLogUpdateView(LoginRequiredMixin, TeacherAndAdminOnlyMixin, UpdateView):
