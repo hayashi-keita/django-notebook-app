@@ -120,7 +120,7 @@ class HeadTeacherLogListView(LoginRequiredMixin, HeadTeacherAndAdminOnlyMixin, L
         context = super().get_context_data(**kwargs)
         # テンプレートで選択状態を維持するためにGETパラメータを渡す
         context['selected_important'] = self.request.GET.get('important', 'all')
-        context['selected_teacher_pk'] = self.request.GET.get('teacher_pk')
+        context['selected_teacher_pk'] = self.request.GET.get('teacher_pk', '')
         # 作成者フィルター用のオプションリスト (同じ学年の先生)
         current_grade = self.request.user.grade
         teachers_in_grade = CustomUser.objects.none()
@@ -129,16 +129,14 @@ class HeadTeacherLogListView(LoginRequiredMixin, HeadTeacherAndAdminOnlyMixin, L
                 grade=current_grade,
                 role__in=['TEACHER', 'ADMIN']
             ).order_by('full_name')
-        context['teacher_in_grade'] = teachers_in_grade
+        context['teachers_in_grade'] = teachers_in_grade
         # 選択された先生オブジェクトをコンテキストに追加する
-        selected_teacher_pk = self.request.GET.get('teacher_pk')
-        context['selected_teacher_pk'] = selected_teacher_pk
         selected_teacher_obj = None
-
-        if selected_teacher_pk:
+        teacher_pk = self.request.GET.get('teacher_pk')
+        if teacher_pk and teacher_pk.isdigit():
             try:
                 # CustomUser (Teacher) モデルからPKで先生を検索
-                selected_teacher_obj = CustomUser.objects.get(pk=selected_teacher_pk)
+                selected_teacher_obj = teachers_in_grade.get(pk=int(teacher_pk))
                 # 存在しない場合はNoneのまま
             except CustomUser.DoesNotExist:
                 pass

@@ -89,7 +89,7 @@
                             <h5 class="mb-0">
                                 <strong class="text-primary">{{ obj.student.full_name }}</strong>
                                 <span class="badge bg-secondary ms-2">
-                                    {{ obj.student.classroom.grade }}年 {{ obj.student.classroom.name }}組
+                                    {{ obj.student.classroom.grade }}年 {{ obj.student.classroom.name }}
                                 </span>
                             </h5>
                         </div>
@@ -115,46 +115,68 @@
 
         {# --- ページネーション (ListView使用時) --- #}
         {% if is_paginated %}
-            {# フィルタリングパラメータを再利用するためのクエリ文字列を構築 #}
-            {# 'add'フィルターは標準的なテンプレートフィルターではないため、より安全な連結方法を使用します #}
-            {% with filter_query='&important='|add:selected_important|urlencode|add:'&teacher_pk='|add:selected_teacher_pk|urlencode %}
-            <nav class="mt-4" aria-label="ページナビゲーション">
-                <ul class="pagination justify-content-center">
-                    
-                    {# 前へリンク #}
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ filter_query }}" aria-label="前へ"><i class="bi bi-chevron-left"></i> 前へ</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> 前へ</span></li>
+            
+            {# STEP 1: フィルタリングパラメータを安全な変数に置き換え、Noneを空文字列にする #}
+            {% with important_safe=selected_important|default:'' teacher_pk_safe=selected_teacher_pk|default:'' %}
+                
+                {# STEP 2: クエリ文字列を構築。値がある場合にのみ &Key=Value の形式で追加する #}
+                {% with filter_query="" %}
+                    {# important の値がある場合のみ、クエリ文字列に追加 #}
+                    {% if important_safe %}
+                        {% with filter_query=filter_query|add:'&important='|add:important_safe %}
+                        {% endwith %}
                     {% endif %}
-                    
-                    {# ページ番号のループを追加: 全てのページ番号をフィルタリングを維持したまま表示します #}
-                    {% for i in page_obj.paginator.page_range %}
-                        {% if page_obj.number == i %}
-                            <li class="page-item active" aria-current="page">
-                                <span class="page-link">{{ i }}</span>
+
+                    {# teacher_pk の値がある場合のみ、クエリ文字列に追加 #}
+                    {% if teacher_pk_safe %}
+                        {# teacher_pk は数値の可能性があるため、文字列に変換してから追加 #}
+                        {% with filter_query=filter_query|add:'&teacher_pk='|add:teacher_pk_safe|stringformat:"s" %}
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+
+                <nav class="mt-4" aria-label="ページナビゲーション">
+                    <ul class="pagination justify-content-center">
+                        
+                        {# 前へリンク #}
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                {# 修正: filter_query は先頭に & が付いているので、そのまま連結 #}
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ filter_query }}" aria-label="前へ"><i class="bi bi-chevron-left"></i> 前へ</a>
                             </li>
                         {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}{{ filter_query }}">{{ i }}</a>
-                            </li>
+                            <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> 前へ</span></li>
                         {% endif %}
-                    {% endfor %}
+                        
+                        {# ページ番号のループ #}
+                        {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    {# 修正: filter_query は先頭に & が付いているので、そのまま連結 #}
+                                    <a class="page-link" href="?page={{ i }}{{ filter_query }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
 
-                    {# 次へリンク #}
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ filter_query }}" aria-label="次へ">次へ <i class="bi bi-chevron-right"></i></a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">次へ <i class="bi bi-chevron-right"></i></span></li>
-                    {% endif %}
-                </ul>
-            </nav>
+                        {# 次へリンク #}
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                {# 修正: filter_query は先頭に & が付いているので、そのまま連結 #}
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ filter_query }}" aria-label="次へ">次へ <i class="bi bi-chevron-right"></i></a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">次へ <i class="bi bi-chevron-right"></i></span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
             {% endwith %}
         {% endif %}
+
 
     {% else %}
         <div class="alert alert-info text-center mt-4">
