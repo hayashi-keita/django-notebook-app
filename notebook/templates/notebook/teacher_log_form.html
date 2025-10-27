@@ -31,14 +31,14 @@
             {% with student=object.student %}
                 <h4 class="mb-3">対象生徒：
                     <span class="badge bg-primary me-2">{{ student.full_name }}</span>
-                    <span class="text-muted small">({{ student.classroom.grade }} {{ student.classroom.name }})</span>
+                    <span class="text-muted small">({{ student.classroom.grade }}年 {{ student.classroom.name }})</span>
                 </h4>
             {% endwith %}
         {% else %}
             {# 新規作成時 (CreateView): target_student を使用 #}
             <h4 class="mb-3">対象生徒：
                 <span class="badge bg-primary me-2">{{ target_student.full_name }}</span>
-                <span class="text-muted small">({{ target_student.classroom.grade }} {{ target_student.classroom.name }})</span>
+                <span class="text-muted small">({{ target_student.classroom.grade }}年 {{ target_student.classroom.name }})</span>
             </h4>
         {% endif %}
 
